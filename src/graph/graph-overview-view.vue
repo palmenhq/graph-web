@@ -7,6 +7,7 @@ import {
   type NodeType,
   useNodeTypesQuery,
 } from '../api/use-node-types-query.ts'
+import { type Node, useNodesQuery } from '../api/use-nodes-query.ts'
 import NewNodeTypeForm from './new-node-type-form.vue'
 import NewNodeForm from './new-node-form.vue'
 
@@ -15,6 +16,13 @@ const workspaceQuery = reactive(useCurrentWorkspaceQuery())
 const nodeTypesQuery = reactive(useNodeTypesQuery())
 
 const nodeTypes = computed<NodeType[]>(() => nodeTypesQuery.data?.items ?? [])
+
+const nodesQuery = reactive(useNodesQuery())
+
+const nodes = computed<Node[]>(() => nodesQuery.data?.items ?? [])
+
+const nodeTypeTitle = (nodeTypeId: string) =>
+  nodeTypes.value.find((nodeType) => nodeType.id === nodeTypeId)?.title
 
 const newNodeDrawerVisible = ref(false)
 const newNodeTypeDrawerVisible = ref(false)
@@ -89,7 +97,22 @@ const splitButtonModel = computed(() => {
     </PageHeader>
 
     <Panel header="Graph">
-      <div v-if="nodeTypesQuery.isSuccess && nodeTypes.length > 0"></div>
+      <div v-if="nodeTypesQuery.isSuccess && nodeTypes.length > 0">
+        <Spinner v-if="nodesQuery.isPending" />
+
+        <div v-else-if="nodesQuery.isError">error</div>
+
+        <div v-else-if="nodes.length === 0"><em>No nodes found</em></div>
+
+        <ul v-else>
+          <li v-for="node in nodes" :key="node.id">
+            {{ node.title }}
+            <em v-if="nodeTypeTitle(node.nodeTypeId)">
+              ({{ nodeTypeTitle(node.nodeTypeId) }})
+            </em>
+          </li>
+        </ul>
+      </div>
 
       <Spinner v-else-if="nodeTypesQuery.isPending" />
 
