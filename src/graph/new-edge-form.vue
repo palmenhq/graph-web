@@ -72,7 +72,22 @@ const relationshipOptions = computed<RelationshipOption[]>(() =>
   ]),
 )
 
-const relationship = ref<RelationshipOption | null>(null)
+// While typing, the autocomplete model holds the raw query string
+const relationship = ref<RelationshipOption | string | null>(null)
+const relationshipSuggestions = ref<RelationshipOption[]>([])
+
+const searchRelationships = (query: string) => {
+  const q = query.trim().toLowerCase()
+  relationshipSuggestions.value = q
+    ? relationshipOptions.value.filter((o) => o.label.toLowerCase().includes(q))
+    : [...relationshipOptions.value]
+}
+
+const selectedRelationship = computed<RelationshipOption | null>(() =>
+  relationship.value && typeof relationship.value === 'object'
+    ? relationship.value
+    : null,
+)
 const targetNode = ref<TargetOption | string | null>(null)
 const nodeSuggestions = ref<TargetOption[]>([])
 
@@ -192,11 +207,11 @@ const createEdgeMutation = reactive(
 
 const submit = () => {
   const target = selectedTargetNode.value
-  if (!relationship.value || !target) {
+  if (!selectedRelationship.value || !target) {
     return
   }
 
-  const { edgeTypeId, reverse } = relationship.value
+  const { edgeTypeId, reverse } = selectedRelationship.value
   createEdgeMutation.mutate({
     edgeTypeId,
     fromNode: reverse ? target.id : props.node.id,
@@ -206,49 +221,69 @@ const submit = () => {
 </script>
 
 <template>
-  <h3 style="padding-bottom: 1rem">New Edge</h3>
+  <h3>New Edge</h3>
 
   <FormDrawer @submit.prevent="submit">
     <FormGroup>
-      <IftaLabel>
-        <Select
-          input-id="edge-relationship"
-          v-model="relationship"
-          :options="relationshipOptions"
-          option-label="label"
-          data-key="key"
-          fluid
-        />
-        <label for="edge-relationship">{{ node.title }} …</label>
-      </IftaLabel>
       <div class="edge-type-toggle">
+        <Button
+          v-if="newNodeVisible"
+          type="button"
+          link
+          size="small"
+          @click="newNodeVisible = false"
+        >
+          Cancel new node
+        </Button>
         <Button
           type="button"
           link
           size="small"
           @click="newEdgeTypeVisible = !newEdgeTypeVisible"
         >
-          {{
-            newEdgeTypeVisible
-              ? 'Cancel new edge type'
-              : 'Missing a relationship? New edge type'
-          }}
+          {{ newEdgeTypeVisible ? 'Cancel new edge type' : 'Add edge type' }}
         </Button>
       </div>
-    </FormGroup>
 
-    <NewEdgeTypeForm v-if="newEdgeTypeVisible" @success="onEdgeTypeCreated" />
+      <NewEdgeTypeForm v-if="newEdgeTypeVisible" @success="onEdgeTypeCreated" />
 
-    <FormGroup>
-      <IftaLabel>
+      <InlineNewNodeForm
+        v-if="newNodeVisible"
+        :initial-title="newNodeTitle"
+        :node-types="nodeTypes"
+        @success="onNodeCreated"
+      />
+
+      <div class="edge-row">
+        <div class="edge-source" :title="node.title">
+          {{ node.title }}
+        </div>
+        <AutoComplete
+          input-id="edge-relationship"
+          v-model="relationship"
+          :suggestions="relationshipSuggestions"
+          option-label="label"
+          data-key="key"
+          placeholder="relationship"
+          aria-label="Relationship"
+          dropdown
+          force-selection
+          complete-on-focus
+          fluid
+          class="edge-relationship"
+          @complete="searchRelationships($event.query)"
+        />
         <AutoComplete
           input-id="edge-target-node"
           v-model="targetNode"
           :suggestions="nodeSuggestions"
           option-label="title"
+          placeholder="other node"
+          aria-label="Target node"
           force-selection
           dropdown
           fluid
+          class="edge-target"
           @complete="searchNodes($event.query)"
           @option-select="onTargetSelected($event.value)"
         >
@@ -259,28 +294,15 @@ const submit = () => {
             <span v-else>{{ option.title }}</span>
           </template>
         </AutoComplete>
-        <label for="edge-target-node">Target node</label>
-      </IftaLabel>
-      <div v-if="newNodeVisible" class="edge-type-toggle">
-        <Button type="button" link size="small" @click="newNodeVisible = false">
-          Cancel new node
-        </Button>
       </div>
     </FormGroup>
-
-    <InlineNewNodeForm
-      v-if="newNodeVisible"
-      :initial-title="newNodeTitle"
-      :node-types="nodeTypes"
-      @success="onNodeCreated"
-    />
 
     <div v-if="createEdgeMutation.isError">error</div>
 
     <Button
       type="submit"
       :loading="createEdgeMutation.isPending"
-      :disabled="!relationship || !selectedTargetNode"
+      :disabled="!selectedRelationship || !selectedTargetNode"
     >
       <Spinner v-if="createEdgeMutation.isPending" />
 
@@ -293,6 +315,30 @@ const submit = () => {
 .edge-type-toggle {
   display: flex;
   justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.edge-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.25rem;
+}
+
+.edge-source {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.edge-relationship,
+.edge-target {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .create-node-option {

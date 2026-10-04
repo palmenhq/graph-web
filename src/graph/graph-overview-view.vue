@@ -15,6 +15,7 @@ import { type Node, useNodesQuery } from '../api/use-nodes-query.ts'
 import NewNodeTypeForm from './new-node-type-form.vue'
 import NewNodeForm from './new-node-form.vue'
 import NodeDialogContent from './node-dialog-content.vue'
+import NodeTitleEditor from './node-title-editor.vue'
 import NotesPanel from '../notes/notes-panel.vue'
 
 const workspaceQuery = reactive(useCurrentWorkspaceQuery())
@@ -165,7 +166,6 @@ const splitButtonModel = computed(() => {
     <Dialog
       v-model:visible="nodeDialogVisible"
       modal
-      :header="selectedNode?.title"
       dismissable-mask
       style="
         width: 40rem;
@@ -173,6 +173,14 @@ const splitButtonModel = computed(() => {
         max-height: calc(100vh - 2rem);
       "
     >
+      <template #header>
+        <NodeTitleEditor
+          v-if="selectedNode"
+          :key="selectedNode.id"
+          :node="selectedNode"
+        />
+      </template>
+
       <NodeDialogContent
         v-if="selectedNode"
         :key="selectedNode.id"

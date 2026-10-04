@@ -159,15 +159,15 @@ onBeforeUnmount(() => {
 .note-editor :deep(.tiptap) {
   min-height: 4rem;
   padding: 0.5rem 0.75rem;
-  border: 1px solid var(--p-inputtext-border-color);
-  border-radius: var(--p-inputtext-border-radius);
-  background: var(--p-inputtext-background);
-  color: var(--p-inputtext-color);
+  border: 1px solid var(--p-form-field-border-color);
+  border-radius: var(--p-form-field-border-radius);
+  background: var(--p-form-field-background);
+  color: var(--p-form-field-color);
   outline: none;
 }
 
 .note-editor :deep(.tiptap:focus) {
-  border-color: var(--p-inputtext-focus-border-color);
+  border-color: var(--p-form-field-focus-border-color);
 }
 
 .note-editor :deep(.tiptap p) {
@@ -179,7 +179,7 @@ onBeforeUnmount(() => {
   float: left;
   height: 0;
   pointer-events: none;
-  color: var(--p-inputtext-placeholder-color);
+  color: var(--p-form-field-placeholder-color);
 }
 
 .note-editor :deep(.note-mention) {

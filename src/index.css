@@ -23,25 +23,19 @@ h6 {
   font-weight: 500;
 }
 
-a,
-a:visited {
+/*
+ * Plain links only: skip OpenVue component links (buttons, menu items, ...)
+ * so the theme styles them. :where() keeps specificity at zero, so any
+ * component/scoped rule (e.g. card links) overrides these defaults.
+ */
+:where(a:not([class^='p-'], [class*=' p-'])) {
   color: var(--p-primary-color);
   text-decoration: none;
 }
 
-a:hover,
-a:focus,
-a:focus-visible {
+:where(a:not([class^='p-'], [class*=' p-'])):hover,
+:where(a:not([class^='p-'], [class*=' p-'])):focus-visible {
   text-decoration: underline;
-}
-
-.p-button,
-.p-button:visited,
-.p-button:hover,
-.p-button:focus,
-.p-button:focus-visible {
-  color: var(--p-button-contrast-color);
-  text-decoration: none;
 }
 
 input {

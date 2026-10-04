@@ -8,6 +8,8 @@ import {
   Dialog,
   Drawer,
   IftaLabel,
+  InputGroup,
+  InputGroupAddon,
   InputText,
   Menubar,
   Panel,
@@ -26,6 +28,8 @@ export const setupOpenVue = (app: App) => {
   app.component('Dialog', Dialog)
   app.component('Drawer', Drawer)
   app.component('IftaLabel', IftaLabel)
+  app.component('InputGroup', InputGroup)
+  app.component('InputGroupAddon', InputGroupAddon)
   app.component('InputText', InputText)
   app.component('Menubar', Menubar)
   app.component('Panel', Panel)
