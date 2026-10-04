@@ -1,0 +1,159 @@
+<script setup lang="ts">
+import FormDrawer from '../design/form-drawer.vue'
+import FormGroup from '../design/form-group.vue'
+import { computed, reactive, ref } from 'vue'
+import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import { apiClient, url } from '../api'
+import { useWorkspaceId } from '../api/use-current-workspace-query.ts'
+import type { ApiList } from '../api/api-list.ts'
+import type { Node } from '../api/use-nodes-query.ts'
+import type { EdgeType } from '../api/use-edge-types-query.ts'
+import Spinner from '../design/spinner.vue'
+
+const props = defineProps<{
+  node: Node
+  edgeTypes: EdgeType[]
+  onSuccess?: () => void
+}>()
+
+type RelationshipOption = {
+  key: string
+  label: string
+  edgeTypeId: string
+  reverse: boolean
+}
+
+const workspaceId = useWorkspaceId()
+
+const relationshipOptions = computed<RelationshipOption[]>(() =>
+  props.edgeTypes.flatMap((edgeType) => [
+    {
+      key: `${edgeType.id}-f`,
+      label: edgeType.relationshipTitle,
+      edgeTypeId: edgeType.id,
+      reverse: false,
+    },
+    {
+      key: `${edgeType.id}-r`,
+      label: edgeType.reverseRelationshipTitle,
+      edgeTypeId: edgeType.id,
+      reverse: true,
+    },
+  ]),
+)
+
+const relationship = ref<RelationshipOption | null>(null)
+const targetNode = ref<Node | string | null>(null)
+const title = ref('')
+const nodeSuggestions = ref<Node[]>([])
+
+const searchNodes = async (query: string) => {
+  const response = await apiClient.get<ApiList<Node>>(
+    url`/workspaces/${workspaceId}/graph/nodes/getAll?search=${query}`,
+  )
+  nodeSuggestions.value = response.data.items.filter(
+    (node) => node.id !== props.node.id,
+  )
+}
+
+const selectedTargetNode = computed<Node | null>(() =>
+  targetNode.value && typeof targetNode.value === 'object'
+    ? targetNode.value
+    : null,
+)
+
+const queryClient = useQueryClient()
+const createEdgeMutation = reactive(
+  useMutation({
+    mutationKey: ['edges', 'new'],
+    mutationFn: (newEdge: {
+      edgeTypeId: string
+      fromNode: string
+      toNode: string
+      title: string | null
+    }) =>
+      apiClient.post(
+        url`/workspaces/${workspaceId}/graph/edges/create`,
+        newEdge,
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['w', workspaceId, 'edges'],
+      })
+      targetNode.value = null
+      title.value = ''
+      props.onSuccess?.()
+    },
+  }),
+)
+
+const submit = () => {
+  const target = selectedTargetNode.value
+  if (!relationship.value || !target) {
+    return
+  }
+
+  const { edgeTypeId, reverse } = relationship.value
+  createEdgeMutation.mutate({
+    edgeTypeId,
+    fromNode: reverse ? target.id : props.node.id,
+    toNode: reverse ? props.node.id : target.id,
+    title: title.value.trim() || null,
+  })
+}
+</script>
+
+<template>
+  <h3 style="padding-bottom: 1rem">New Edge</h3>
+
+  <FormDrawer @submit.prevent="submit">
+    <FormGroup>
+      <IftaLabel>
+        <Select
+          input-id="edge-relationship"
+          v-model="relationship"
+          :options="relationshipOptions"
+          option-label="label"
+          data-key="key"
+          fluid
+        />
+        <label for="edge-relationship">{{ node.title }} …</label>
+      </IftaLabel>
+    </FormGroup>
+
+    <FormGroup>
+      <IftaLabel>
+        <AutoComplete
+          input-id="edge-target-node"
+          v-model="targetNode"
+          :suggestions="nodeSuggestions"
+          option-label="title"
+          force-selection
+          dropdown
+          fluid
+          @complete="searchNodes($event.query)"
+        />
+        <label for="edge-target-node">Target node</label>
+      </IftaLabel>
+    </FormGroup>
+
+    <FormGroup>
+      <IftaLabel>
+        <InputText id="edge-title" v-model="title" fluid />
+        <label for="edge-title">Title (optional)</label>
+      </IftaLabel>
+    </FormGroup>
+
+    <div v-if="createEdgeMutation.isError">error</div>
+
+    <Button
+      type="submit"
+      :loading="createEdgeMutation.isPending"
+      :disabled="!relationship || !selectedTargetNode"
+    >
+      <Spinner v-if="createEdgeMutation.isPending" />
+
+      Create
+    </Button>
+  </FormDrawer>
+</template>

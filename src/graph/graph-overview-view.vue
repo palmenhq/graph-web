@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
-import { useCurrentWorkspaceQuery } from '../api/use-current-workspace-query.ts'
+import { useRoute, useRouter } from 'vue-router'
+import {
+  useCurrentWorkspaceQuery,
+  useWorkspaceId,
+} from '../api/use-current-workspace-query.ts'
 import PageHeader from '../layout/page-header.vue'
 import Spinner from '../design/spinner.vue'
 import {
@@ -10,6 +14,7 @@ import {
 import { type Node, useNodesQuery } from '../api/use-nodes-query.ts'
 import NewNodeTypeForm from './new-node-type-form.vue'
 import NewNodeForm from './new-node-form.vue'
+import NodeDialogContent from './node-dialog-content.vue'
 
 const workspaceQuery = reactive(useCurrentWorkspaceQuery())
 
@@ -23,6 +28,27 @@ const nodes = computed<Node[]>(() => nodesQuery.data?.items ?? [])
 
 const nodeTypeTitle = (nodeTypeId: string) =>
   nodeTypes.value.find((nodeType) => nodeType.id === nodeTypeId)?.title
+
+const route = useRoute()
+const router = useRouter()
+const workspaceId = useWorkspaceId()
+
+const nodeLink = (node: Node) => `/w/${workspaceId}/nodes/${node.id}`
+
+const selectedNodeId = computed(() => route.params.nodeId as string | undefined)
+
+const selectedNode = computed<Node | null>(
+  () => nodes.value.find((node) => node.id === selectedNodeId.value) ?? null,
+)
+
+const nodeDialogVisible = computed({
+  get: () => !!selectedNodeId.value,
+  set: (visible: boolean) => {
+    if (!visible) {
+      router.push(`/w/${workspaceId}`)
+    }
+  },
+})
 
 const newNodeDrawerVisible = ref(false)
 const newNodeTypeDrawerVisible = ref(false)
@@ -104,14 +130,21 @@ const splitButtonModel = computed(() => {
 
         <div v-else-if="nodes.length === 0"><em>No nodes found</em></div>
 
-        <ul v-else>
-          <li v-for="node in nodes" :key="node.id">
-            {{ node.title }}
-            <em v-if="nodeTypeTitle(node.nodeTypeId)">
-              ({{ nodeTypeTitle(node.nodeTypeId) }})
-            </em>
-          </li>
-        </ul>
+        <div v-else class="node-grid">
+          <RouterLink
+            v-for="node in nodes"
+            :key="node.id"
+            :to="nodeLink(node)"
+            class="node-card-link"
+          >
+            <Card class="node-card">
+              <template #title>{{ node.title }}</template>
+              <template v-if="nodeTypeTitle(node.nodeTypeId)" #subtitle>
+                {{ nodeTypeTitle(node.nodeTypeId) }}
+              </template>
+            </Card>
+          </RouterLink>
+        </div>
       </div>
 
       <Spinner v-else-if="nodeTypesQuery.isPending" />
@@ -123,6 +156,26 @@ const splitButtonModel = computed(() => {
         </div>
       </div>
     </Panel>
+
+    <Dialog
+      v-model:visible="nodeDialogVisible"
+      modal
+      :header="selectedNode?.title"
+      dismissable-mask
+      style="width: 40rem"
+    >
+      <NodeDialogContent
+        v-if="selectedNode"
+        :key="selectedNode.id"
+        :node="selectedNode"
+      />
+
+      <Spinner v-else-if="nodesQuery.isPending" />
+
+      <div v-else-if="nodesQuery.isError">error</div>
+
+      <div v-else><em>Node not found</em></div>
+    </Dialog>
 
     <Drawer
       v-model:visible="newNodeDrawerVisible"
@@ -147,4 +200,22 @@ const splitButtonModel = computed(() => {
   </template>
 </template>
 
-<style scoped></style>
+<style scoped>
+.node-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 1rem;
+}
+
+.node-card-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--p-card-border-radius);
+}
+
+.node-card-link:hover,
+.node-card-link:focus-visible {
+  outline: 2px solid var(--p-primary-color);
+}
+</style>

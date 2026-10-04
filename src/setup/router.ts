@@ -6,6 +6,7 @@ import GraphOverviewView from '../graph/graph-overview-view.vue'
 export const setupRouter = (app: App) => {
   const routes = [
     { path: '/w/:workspaceId', component: GraphOverviewView },
+    { path: '/w/:workspaceId/nodes/:nodeId', component: GraphOverviewView },
     { path: '/w', component: WorkspaceListView },
   ] satisfies RouteRecordRaw[]
 
