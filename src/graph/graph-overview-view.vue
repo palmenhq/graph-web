@@ -21,6 +21,7 @@ import NewNodeForm from './new-node-form.vue'
 import NodeDialogContent from './node-dialog-content.vue'
 import NodeTitleEditor from './node-title-editor.vue'
 import NotesPanel from '../notes/notes-panel.vue'
+import { flattenPages } from '../api/api-list.ts'
 
 const workspaceQuery = reactive(useCurrentWorkspaceQuery())
 
@@ -30,7 +31,7 @@ const nodeTypes = computed<NodeType[]>(() => nodeTypesQuery.data?.items ?? [])
 
 const nodesQuery = reactive(useNodesQuery())
 
-const nodes = computed<Node[]>(() => nodesQuery.data?.items ?? [])
+const nodes = computed<Node[]>(() => flattenPages(nodesQuery.data))
 
 const searchInput = ref('')
 const search = ref('')
@@ -54,7 +55,7 @@ const clearSearch = () => {
 
 const searchQuery = reactive(useNodeSearchQuery(search))
 
-const searchedNodes = computed<Node[]>(() => searchQuery.data?.items ?? [])
+const searchedNodes = computed<Node[]>(() => flattenPages(searchQuery.data))
 
 const nodeTypeTitle = (nodeTypeId: string) =>
   nodeTypes.value.find((nodeType) => nodeType.id === nodeTypeId)?.title
@@ -221,6 +222,19 @@ const splitButtonModel = computed(() => {
               </Card>
             </RouterLink>
           </div>
+
+          <div
+            v-if="searchQuery.hasNextPage && !searchQuery.isPlaceholderData"
+            class="load-more"
+          >
+            <Button
+              severity="secondary"
+              :loading="searchQuery.isFetchingNextPage"
+              @click="searchQuery.fetchNextPage()"
+            >
+              Load more
+            </Button>
+          </div>
         </div>
 
         <Spinner v-else-if="nodeTypesQuery.isPending" />
@@ -347,6 +361,12 @@ const splitButtonModel = computed(() => {
 
 .node-grid-stale {
   opacity: 0.6;
+}
+
+.load-more {
+  display: flex;
+  justify-content: center;
+  padding-top: 1rem;
 }
 
 .node-card-link {

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/vue-query'
+import { useInfiniteQuery, useQuery } from '@tanstack/vue-query'
 import type { JSONContent } from '@tiptap/core'
 import { apiClient, url } from './index.ts'
 import { useWorkspaceId } from './use-current-workspace-query.ts'
@@ -43,12 +43,16 @@ export const isEmptyNoteBody = (doc: JSONContent): boolean => {
 export const useNotesQuery = () => {
   const workspaceId = useWorkspaceId()
 
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ['w', workspaceId, 'notes'],
-    queryFn: () =>
+    queryFn: ({ pageParam }) =>
       apiClient
-        .get<ApiList<Note>>(url`/workspaces/${workspaceId}/notes/getAll`)
+        .get<ApiList<Note>>(url`/workspaces/${workspaceId}/notes/getAll`, {
+          params: { cursor: pageParam },
+        })
         .then((r) => r.data),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   })
 }
 

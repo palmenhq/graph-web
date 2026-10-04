@@ -13,6 +13,7 @@ import NewEdgeForm from './new-edge-form.vue'
 import { useWorkspaceId } from '../api/use-current-workspace-query.ts'
 import { type Note, useNodeNotesQuery } from '../api/use-notes-query.ts'
 import NoteBody from '../notes/note-body.vue'
+import { flattenPages } from '../api/api-list.ts'
 
 const props = defineProps<{
   node: Node
@@ -28,7 +29,7 @@ const notesQuery = reactive(useNodeNotesQuery(props.node.id))
 
 const edges = computed<Edge[]>(() => edgesQuery.data?.items ?? [])
 const edgeTypes = computed<EdgeType[]>(() => edgeTypesQuery.data?.items ?? [])
-const nodes = computed<Node[]>(() => nodesQuery.data?.items ?? [])
+const nodes = computed<Node[]>(() => flattenPages(nodesQuery.data))
 const notes = computed<Note[]>(() => notesQuery.data?.items ?? [])
 
 const edgeRows = computed(() =>

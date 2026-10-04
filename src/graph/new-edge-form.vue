@@ -285,6 +285,7 @@ const submit = () => {
           placeholder="other node"
           aria-label="Target node"
           force-selection
+          complete-on-focus
           dropdown
           fluid
           class="edge-target"

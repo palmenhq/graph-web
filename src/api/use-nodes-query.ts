@@ -1,5 +1,5 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
-import { keepPreviousData, useQuery } from '@tanstack/vue-query'
+import { keepPreviousData, useInfiniteQuery } from '@tanstack/vue-query'
 import { apiClient, url } from './index.ts'
 import { useWorkspaceId } from './use-current-workspace-query.ts'
 import type { ApiList } from './api-list.ts'
@@ -12,15 +12,24 @@ export type Node = {
   workspaceId: string
 }
 
+const fetchNodes = (
+  workspaceId: string,
+  params: { search?: string; cursor?: string },
+) =>
+  apiClient
+    .get<ApiList<Node>>(url`/workspaces/${workspaceId}/graph/nodes/getAll`, {
+      params,
+    })
+    .then((r) => r.data)
+
 export const useNodesQuery = () => {
   const workspaceId = useWorkspaceId()
 
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ['w', workspaceId, 'nodes'],
-    queryFn: () =>
-      apiClient
-        .get<ApiList<Node>>(url`/workspaces/${workspaceId}/graph/nodes/getAll`)
-        .then((r) => r.data),
+    queryFn: ({ pageParam }) => fetchNodes(workspaceId, { cursor: pageParam }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   })
 }
 
@@ -28,20 +37,19 @@ export const useNodeSearchQuery = (search: MaybeRefOrGetter<string>) => {
   const workspaceId = useWorkspaceId()
   const term = computed(() => toValue(search).trim())
 
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: computed(() =>
       term.value
         ? ['w', workspaceId, 'nodes', 'search', term.value]
         : ['w', workspaceId, 'nodes'],
     ),
-    queryFn: () =>
-      apiClient
-        .get<ApiList<Node>>(
-          term.value
-            ? url`/workspaces/${workspaceId}/graph/nodes/getAll?search=${term.value}`
-            : url`/workspaces/${workspaceId}/graph/nodes/getAll`,
-        )
-        .then((r) => r.data),
+    queryFn: ({ pageParam }) =>
+      fetchNodes(workspaceId, {
+        search: term.value || undefined,
+        cursor: pageParam,
+      }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     placeholderData: keepPreviousData,
   })
 }

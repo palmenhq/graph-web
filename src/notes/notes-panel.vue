@@ -4,6 +4,7 @@ import type { JSONContent } from '@tiptap/core'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { apiClient, url } from '../api'
 import { useWorkspaceId } from '../api/use-current-workspace-query.ts'
+import { flattenPages } from '../api/api-list.ts'
 import type { Node } from '../api/use-nodes-query.ts'
 import {
   type NewNote,
@@ -24,7 +25,7 @@ const workspaceId = useWorkspaceId()
 
 const notesQuery = reactive(useNotesQuery())
 
-const notes = computed<Note[]>(() => notesQuery.data?.items ?? [])
+const notes = computed<Note[]>(() => flattenPages(notesQuery.data))
 
 const noteBody = ref<JSONContent | null>(null)
 const editorRef = ref<InstanceType<typeof NoteEditor> | null>(null)
@@ -101,6 +102,16 @@ const submit = () => {
         <NoteBody :body="note.body" :nodes="nodes" />
       </li>
     </ul>
+
+    <div v-if="notesQuery.hasNextPage" class="load-more">
+      <Button
+        severity="secondary"
+        :loading="notesQuery.isFetchingNextPage"
+        @click="notesQuery.fetchNextPage()"
+      >
+        Load more
+      </Button>
+    </div>
   </Panel>
 </template>
 
@@ -123,5 +134,11 @@ const submit = () => {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.load-more {
+  display: flex;
+  justify-content: center;
+  padding-top: 1rem;
 }
 </style>
