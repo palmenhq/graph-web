@@ -109,6 +109,14 @@ const deleteNode = () => {
       </Button>
     </div>
 
+    <div v-if="newEdgeVisible" class="sub-form">
+      <NewEdgeForm
+        :node="node"
+        :edge-types="edgeTypes"
+        @success="newEdgeVisible = false"
+      />
+    </div>
+
     <Spinner v-if="edgesQuery.isPending" />
 
     <div v-else-if="edgesQuery.isError">error</div>
@@ -143,14 +151,6 @@ const deleteNode = () => {
     </ul>
 
     <div v-if="deleteEdgeMutation.isError">error deleting edge</div>
-
-    <div v-if="newEdgeVisible" class="sub-form">
-      <NewEdgeForm
-        :node="node"
-        :edge-types="edgeTypes"
-        @success="newEdgeVisible = false"
-      />
-    </div>
   </section>
 
   <section class="section">
@@ -223,7 +223,10 @@ const deleteNode = () => {
 }
 
 .sub-form {
-  padding-top: 1rem;
+  padding: 1rem;
+  margin: 1rem 0;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 0.5rem;
 }
 
 .note-list {
