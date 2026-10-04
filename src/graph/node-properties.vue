@@ -175,23 +175,25 @@ const submitNewProperty = () => {
               :disabled="setValueMutation.isPending"
               @keydown.esc.stop.prevent="cancelEditing"
             />
-            <Button
-              type="submit"
-              size="small"
-              :loading="setValueMutation.isPending"
-            >
-              Save
-            </Button>
-            <Button
-              type="button"
-              size="small"
-              severity="secondary"
-              text
-              :disabled="setValueMutation.isPending"
-              @click="cancelEditing"
-            >
-              Cancel
-            </Button>
+            <div class="property-actions">
+              <Button
+                type="submit"
+                size="small"
+                :loading="setValueMutation.isPending"
+              >
+                Save
+              </Button>
+              <Button
+                type="button"
+                size="small"
+                severity="secondary"
+                text
+                :disabled="setValueMutation.isPending"
+                @click="cancelEditing"
+              >
+                Cancel
+              </Button>
+            </div>
           </form>
 
           <div v-else class="property-display">
@@ -237,24 +239,26 @@ const submitNewProperty = () => {
               :disabled="createPropertyMutation.isPending"
               @keydown.esc.stop.prevent="cancelAdding"
             />
-            <Button
-              type="submit"
-              size="small"
-              :loading="createPropertyMutation.isPending"
-              :disabled="!newPropertyName.trim()"
-            >
-              Save
-            </Button>
-            <Button
-              type="button"
-              size="small"
-              severity="secondary"
-              text
-              :disabled="createPropertyMutation.isPending"
-              @click="cancelAdding"
-            >
-              Cancel
-            </Button>
+            <div class="property-actions">
+              <Button
+                type="submit"
+                size="small"
+                :loading="createPropertyMutation.isPending"
+                :disabled="!newPropertyName.trim()"
+              >
+                Save
+              </Button>
+              <Button
+                type="button"
+                size="small"
+                severity="secondary"
+                text
+                :disabled="createPropertyMutation.isPending"
+                @click="cancelAdding"
+              >
+                Cancel
+              </Button>
+            </div>
           </form>
         </li>
       </ul>
@@ -332,6 +336,29 @@ const submitNewProperty = () => {
 
 .property-type {
   flex: 0 0 auto;
+}
+
+.property-editor {
+  position: relative;
+}
+
+.property-actions {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color);
+  border-radius: var(--p-content-border-radius, 6px);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.12);
+}
+
+.property-name {
+  max-width: 25vw;
 }
 
 .add-property {
