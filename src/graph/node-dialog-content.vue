@@ -10,25 +10,40 @@ import {
 } from '../api/use-edge-types-query.ts'
 import { type Edge, useNodeEdgesQuery } from '../api/use-node-edges-query.ts'
 import NewEdgeForm from './new-edge-form.vue'
+import NodeProperties from './node-properties.vue'
 import { useWorkspaceId } from '../api/use-current-workspace-query.ts'
 import { type Note, useNodeNotesQuery } from '../api/use-notes-query.ts'
 import NoteBody from '../notes/note-body.vue'
 import { flattenPages } from '../api/api-list.ts'
 import { getNodeTypeTitle } from './helpers.ts'
 import { useNodeTypesQuery } from '../api/use-node-types-query.ts'
+import { useNodeQuery } from '../api/use-node-query.ts'
+import NodeTitleEditor from './node-title-editor.vue'
 
 const props = defineProps<{
-  node: Node
-  onDeleted?: () => void
+  nodeId: string
+  onClose?: () => void
 }>()
+
+const visible = computed({
+  get: () => true,
+  set: (value: boolean) => {
+    if (!value) {
+      props.onClose?.()
+    }
+  },
+})
 
 const workspaceId = useWorkspaceId()
 
-const edgesQuery = reactive(useNodeEdgesQuery(props.node.id))
+const nodeQuery = reactive(useNodeQuery(props.nodeId))
+const node = computed(() => nodeQuery.data)
+
+const edgesQuery = reactive(useNodeEdgesQuery(props.nodeId))
 const edgeTypesQuery = reactive(useEdgeTypesQuery())
 const nodesQuery = reactive(useNodesQuery())
 const nodeTypesQuery = reactive(useNodeTypesQuery())
-const notesQuery = reactive(useNodeNotesQuery(props.node.id))
+const notesQuery = reactive(useNodeNotesQuery(props.nodeId))
 
 const edges = computed<Edge[]>(() => edgesQuery.data?.items ?? [])
 const edgeTypes = computed<EdgeType[]>(() => edgeTypesQuery.data?.items ?? [])
@@ -37,7 +52,7 @@ const notes = computed<Note[]>(() => notesQuery.data?.items ?? [])
 
 const edgeRows = computed(() =>
   edges.value.map((edge) => {
-    const outgoing = edge.fromNode === props.node.id
+    const outgoing = edge.fromNode === props.nodeId
     const otherNodeId = outgoing ? edge.toNode : edge.fromNode
     return {
       edge,
@@ -85,7 +100,7 @@ const deleteNodeMutation = reactive(
         id,
       }),
     onSuccess: () => {
-      props.onDeleted?.()
+      props.onClose?.()
       queryClient.invalidateQueries({ queryKey: ['w', workspaceId, 'nodes'] })
       queryClient.invalidateQueries({ queryKey: ['w', workspaceId, 'edges'] })
       queryClient.invalidateQueries({ queryKey: ['w', workspaceId, 'notes'] })
@@ -94,109 +109,135 @@ const deleteNodeMutation = reactive(
 )
 
 const deleteNode = () => {
-  if (window.confirm(`Delete node "${props.node.title}" and all its edges?`)) {
-    deleteNodeMutation.mutate(props.node.id)
+  const title = node.value?.title ?? props.nodeId
+  if (window.confirm(`Delete node "${title}" and all its edges?`)) {
+    deleteNodeMutation.mutate(props.nodeId)
   }
 }
 </script>
 
 <template>
-  <section class="section">
-    <div v-if="nodeTypesQuery.data?.items" class="section-node-type">
-      {{ getNodeTypeTitle(nodeTypesQuery.data.items, props.node.nodeTypeId) }}
-    </div>
+  <Dialog
+    v-model:visible="visible"
+    modal
+    dismissable-mask
+    style="
+      width: 40rem;
+      max-width: calc(100vw - 2rem);
+      max-height: calc(100vh - 2rem);
+    "
+  >
+    <template #header>
+      <NodeTitleEditor v-if="node" :node="node" />
+    </template>
 
-    <div class="section-header">
-      <h3>Edges</h3>
-      <Button
-        size="small"
-        :disabled="edgeTypesQuery.isPending"
-        @click="newEdgeVisible = !newEdgeVisible"
-      >
-        {{ newEdgeVisible ? 'Cancel' : 'Add Edge' }}
-      </Button>
-    </div>
+    <Spinner v-if="nodeQuery.isPending" />
 
-    <div v-if="newEdgeVisible" class="sub-form">
-      <NewEdgeForm
-        :node="node"
-        :edge-types="edgeTypes"
-        @success="newEdgeVisible = false"
-      />
-    </div>
+    <div v-else-if="nodeQuery.isError">error</div>
 
-    <Spinner v-if="edgesQuery.isPending" />
+    <div v-else-if="!node"><em>Node not found</em></div>
 
-    <div v-else-if="edgesQuery.isError">error</div>
+    <template v-else>
+      <div v-if="nodeTypesQuery.data?.items" class="section-node-type">
+        {{ getNodeTypeTitle(nodeTypesQuery.data.items, node.nodeTypeId) }}
+      </div>
 
-    <div v-else-if="edgeRows.length === 0"><em>No edges</em></div>
+      <NodeProperties :node="node" />
 
-    <ul v-else class="edge-list">
-      <li v-for="row in edgeRows" :key="row.edge.id" class="edge-row">
-        <span>
-          {{ row.relationship ?? '?' }}
-          <RouterLink
-            v-if="row.otherNode"
-            :to="`/w/${workspaceId}/nodes/${row.otherNode.id}`"
-            >{{ row.otherNode.title }}</RouterLink
+      <section class="section">
+        <div class="section-header">
+          <h3>Edges</h3>
+          <Button
+            size="small"
+            :disabled="edgeTypesQuery.isPending"
+            @click="newEdgeVisible = !newEdgeVisible"
           >
-          <em v-else>{{ row.otherNodeId }}</em>
-        </span>
+            {{ newEdgeVisible ? 'Cancel' : 'Add Edge' }}
+          </Button>
+        </div>
+
+        <div v-if="newEdgeVisible" class="sub-form">
+          <NewEdgeForm
+            :node="node"
+            :edge-types="edgeTypes"
+            @success="newEdgeVisible = false"
+          />
+        </div>
+
+        <Spinner v-if="edgesQuery.isPending" />
+
+        <div v-else-if="edgesQuery.isError">error</div>
+
+        <div v-else-if="edgeRows.length === 0"><em>No edges</em></div>
+
+        <ul v-else class="edge-list">
+          <li v-for="row in edgeRows" :key="row.edge.id" class="edge-row">
+            <span>
+              {{ row.relationship ?? '?' }}
+              <RouterLink
+                v-if="row.otherNode"
+                :to="`/w/${workspaceId}/nodes/${row.otherNode.id}`"
+                >{{ row.otherNode.title }}</RouterLink
+              >
+              <em v-else>{{ row.otherNodeId }}</em>
+            </span>
+            <Button
+              size="small"
+              severity="danger"
+              text
+              :loading="
+                deleteEdgeMutation.isPending &&
+                deleteEdgeMutation.variables === row.edge.id
+              "
+              :disabled="deleteEdgeMutation.isPending"
+              @click="deleteEdge(row)"
+            >
+              Delete
+            </Button>
+          </li>
+        </ul>
+
+        <div v-if="deleteEdgeMutation.isError">error deleting edge</div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <h3>Notes</h3>
+        </div>
+
+        <Spinner v-if="notesQuery.isPending" />
+
+        <div v-else-if="notesQuery.isError">error</div>
+
+        <div v-else-if="notes.length === 0">
+          <em>No notes mention this node</em>
+        </div>
+
+        <ul v-else class="note-list">
+          <li v-for="note in notes" :key="note.id">
+            <NoteBody
+              :body="note.body"
+              :nodes="nodes"
+              :created-at="note.createdAt"
+            />
+          </li>
+        </ul>
+      </section>
+
+      <section class="danger-zone">
+        <div v-if="deleteNodeMutation.isError">error deleting node</div>
         <Button
-          size="small"
           severity="danger"
-          text
-          :loading="
-            deleteEdgeMutation.isPending &&
-            deleteEdgeMutation.variables === row.edge.id
-          "
-          :disabled="deleteEdgeMutation.isPending"
-          @click="deleteEdge(row)"
+          outlined
+          :loading="deleteNodeMutation.isPending"
+          @click="deleteNode"
+          size="small"
         >
-          Delete
+          Delete Node
         </Button>
-      </li>
-    </ul>
-
-    <div v-if="deleteEdgeMutation.isError">error deleting edge</div>
-  </section>
-
-  <section class="section">
-    <div class="section-header">
-      <h3>Notes</h3>
-    </div>
-
-    <Spinner v-if="notesQuery.isPending" />
-
-    <div v-else-if="notesQuery.isError">error</div>
-
-    <div v-else-if="notes.length === 0">
-      <em>No notes mention this node</em>
-    </div>
-
-    <ul v-else class="note-list">
-      <li v-for="note in notes" :key="note.id">
-        <NoteBody
-          :body="note.body"
-          :nodes="nodes"
-          :created-at="note.createdAt"
-        />
-      </li>
-    </ul>
-  </section>
-
-  <section class="danger-zone">
-    <div v-if="deleteNodeMutation.isError">error deleting node</div>
-    <Button
-      severity="danger"
-      outlined
-      :loading="deleteNodeMutation.isPending"
-      @click="deleteNode"
-      size="small"
-    >
-      Delete Node
-    </Button>
-  </section>
+      </section>
+    </template>
+  </Dialog>
 </template>
 
 <style scoped>

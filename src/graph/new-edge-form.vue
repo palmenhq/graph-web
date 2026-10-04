@@ -17,7 +17,7 @@ import NewEdgeTypeForm, { type CreatedEdgeType } from './new-edge-type-form.vue'
 import InlineNewNodeForm from './inline-new-node-form.vue'
 
 const props = defineProps<{
-  node: Node
+  node: Pick<Node, 'id' | 'title' | 'nodeTypeId'>
   edgeTypes: EdgeType[]
   onSuccess?: () => void
 }>()

@@ -3,11 +3,9 @@ import { computed, onBeforeUnmount, ref } from 'vue'
 import type { JSONContent } from '@tiptap/core'
 import { format, formatDistance, isValid, parseISO } from 'date-fns'
 import { useWorkspaceId } from '../api/use-current-workspace-query.ts'
-import type { Node } from '../api/use-nodes-query.ts'
 
 const props = defineProps<{
   body: JSONContent
-  nodes: Node[]
   createdAt?: string
 }>()
 
@@ -39,9 +37,7 @@ const paragraphs = computed<JSONContent[]>(() =>
 )
 
 const mentionLabel = (inline: JSONContent) =>
-  props.nodes.find((node) => node.id === inline.attrs?.id)?.title ??
-  inline.attrs?.label ??
-  inline.attrs?.id
+  inline.attrs?.label ?? inline.attrs?.id
 
 const mentionLink = (inline: JSONContent) =>
   `/w/${workspaceId}/nodes/${inline.attrs?.id}`

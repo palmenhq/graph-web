@@ -19,7 +19,6 @@ import {
 import NewNodeTypeForm from './new-node-type-form.vue'
 import NewNodeForm from './new-node-form.vue'
 import NodeDialogContent from './node-dialog-content.vue'
-import NodeTitleEditor from './node-title-editor.vue'
 import NotesPanel from '../notes/notes-panel.vue'
 import { flattenPages } from '../api/api-list.ts'
 import { getNodeTypeTitle } from './helpers.ts'
@@ -66,18 +65,7 @@ const nodeLink = (node: Node) => `/w/${workspaceId}/nodes/${node.id}`
 
 const selectedNodeId = computed(() => route.params.nodeId as string | undefined)
 
-const selectedNode = computed<Node | null>(
-  () => nodes.value.find((node) => node.id === selectedNodeId.value) ?? null,
-)
-
-const nodeDialogVisible = computed({
-  get: () => !!selectedNodeId.value,
-  set: (visible: boolean) => {
-    if (!visible) {
-      router.push(`/w/${workspaceId}`)
-    }
-  },
-})
+const closeNodeDialog = () => router.push(`/w/${workspaceId}`)
 
 const newNodeDrawerVisible = ref(false)
 const newNodeTypeDrawerVisible = ref(false)
@@ -251,37 +239,12 @@ const splitButtonModel = computed(() => {
       <NotesPanel class="overview-notes" :nodes="nodes" />
     </div>
 
-    <Dialog
-      v-model:visible="nodeDialogVisible"
-      modal
-      dismissable-mask
-      style="
-        width: 40rem;
-        max-width: calc(100vw - 2rem);
-        max-height: calc(100vh - 2rem);
-      "
-    >
-      <template #header>
-        <NodeTitleEditor
-          v-if="selectedNode"
-          :key="selectedNode.id"
-          :node="selectedNode"
-        />
-      </template>
-
-      <NodeDialogContent
-        v-if="selectedNode"
-        :key="selectedNode.id"
-        :node="selectedNode"
-        @deleted="nodeDialogVisible = false"
-      />
-
-      <Spinner v-else-if="nodesQuery.isPending" />
-
-      <div v-else-if="nodesQuery.isError">error</div>
-
-      <div v-else><em>Node not found</em></div>
-    </Dialog>
+    <NodeDialogContent
+      v-if="selectedNodeId"
+      :key="selectedNodeId"
+      :node-id="selectedNodeId"
+      @close="closeNodeDialog"
+    />
 
     <Drawer
       v-model:visible="newNodeDrawerVisible"

@@ -6,7 +6,7 @@ import type { Node } from '../api/use-nodes-query.ts'
 import { useWorkspaceId } from '../api/use-current-workspace-query.ts'
 
 const props = defineProps<{
-  node: Node
+  node: Pick<Node, 'id' | 'title'>
 }>()
 
 const workspaceId = useWorkspaceId()
