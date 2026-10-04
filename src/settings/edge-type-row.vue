@@ -25,7 +25,7 @@ const updateEdgeTypeMutation = reactive(
       relationshipTitle: string
       reverseRelationshipTitle: string | null
     }) =>
-      apiClient.patch(
+      apiClient.post(
         url`/workspaces/${workspaceId}/graph/edgeTypes/update`,
         variables,
       ),

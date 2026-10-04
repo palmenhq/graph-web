@@ -5,6 +5,7 @@ import { apiClient, url } from '../api'
 import type { NodeType } from '../api/use-node-types-query.ts'
 import { useWorkspaceId } from '../api/use-current-workspace-query.ts'
 import TypeRow from './type-row.vue'
+import NodeTypeProperties from './node-type-properties.vue'
 
 const props = defineProps<{
   nodeType: NodeType
@@ -20,7 +21,7 @@ const updateNodeTypeMutation = reactive(
   useMutation({
     mutationKey: ['node-types', 'update'],
     mutationFn: (variables: { id: string; title: string }) =>
-      apiClient.patch(
+      apiClient.post(
         url`/workspaces/${workspaceId}/graph/nodeTypes/update`,
         variables,
       ),
@@ -105,5 +106,7 @@ const remove = () => {
         :disabled="updateNodeTypeMutation.isPending"
       />
     </template>
+
+    <NodeTypeProperties :nodeType />
   </TypeRow>
 </template>

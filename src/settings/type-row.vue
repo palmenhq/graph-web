@@ -67,6 +67,8 @@ const emit = defineEmits<{
 
     <span v-if="saveError" class="error">error saving</span>
     <span v-if="deleteError" class="error">error deleting</span>
+
+    <slot />
   </div>
 </template>
 

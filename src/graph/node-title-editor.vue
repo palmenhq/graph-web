@@ -19,7 +19,7 @@ const updateNodeMutation = reactive(
   useMutation({
     mutationKey: ['nodes', 'update'],
     mutationFn: (variables: { id: string; title: string }) =>
-      apiClient.patch(
+      apiClient.post(
         url`/workspaces/${workspaceId}/graph/nodes/update`,
         variables,
       ),

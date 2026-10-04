@@ -13,6 +13,7 @@ import {
   propertyValueTypes,
   useNodeQuery,
 } from '../api/use-node-query.ts'
+import NodePropertyValue from './node-property-value.vue'
 
 const props = defineProps<{
   node: Pick<Node, 'id' | 'nodeTypeId'>
@@ -194,9 +195,10 @@ const submitNewProperty = () => {
           </form>
 
           <div v-else class="property-display">
-            <span class="property-value" :class="{ empty: !property.value }">
-              {{ property.value || 'Empty' }}
-            </span>
+            <NodePropertyValue
+              :value-type="property.valueType"
+              :value="property.value"
+            />
             <Button
               type="button"
               size="small"
@@ -321,15 +323,6 @@ const submitNewProperty = () => {
   gap: 0.5rem;
   flex: 1;
   min-width: 0;
-}
-
-.property-value {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.property-value.empty {
-  color: var(--p-text-muted-color);
 }
 
 .property-input {
