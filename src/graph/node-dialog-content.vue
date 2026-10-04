@@ -3,7 +3,6 @@ import { computed, reactive, ref } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { apiClient, url } from '../api'
 import Spinner from '../design/spinner.vue'
-import { type Node, useNodesQuery } from '../api/use-nodes-query.ts'
 import {
   type EdgeType,
   useEdgeTypesQuery,
@@ -14,7 +13,6 @@ import NodeProperties from './node-properties.vue'
 import { useWorkspaceId } from '../api/use-current-workspace-query.ts'
 import { type Note, useNodeNotesQuery } from '../api/use-notes-query.ts'
 import NoteBody from '../notes/note-body.vue'
-import { flattenPages } from '../api/api-list.ts'
 import { getNodeTypeTitle } from './helpers.ts'
 import { useNodeTypesQuery } from '../api/use-node-types-query.ts'
 import { useNodeQuery } from '../api/use-node-query.ts'
@@ -41,29 +39,12 @@ const node = computed(() => nodeQuery.data)
 
 const edgesQuery = reactive(useNodeEdgesQuery(props.nodeId))
 const edgeTypesQuery = reactive(useEdgeTypesQuery())
-const nodesQuery = reactive(useNodesQuery())
 const nodeTypesQuery = reactive(useNodeTypesQuery())
 const notesQuery = reactive(useNodeNotesQuery(props.nodeId))
 
 const edges = computed<Edge[]>(() => edgesQuery.data?.items ?? [])
 const edgeTypes = computed<EdgeType[]>(() => edgeTypesQuery.data?.items ?? [])
-const nodes = computed<Node[]>(() => flattenPages(nodesQuery.data))
 const notes = computed<Note[]>(() => notesQuery.data?.items ?? [])
-
-const edgeRows = computed(() =>
-  edges.value.map((edge) => {
-    const outgoing = edge.fromNode === props.nodeId
-    const otherNodeId = outgoing ? edge.toNode : edge.fromNode
-    return {
-      edge,
-      relationship: outgoing
-        ? edge?.relationshipTitle
-        : (edge?.reverseRelationshipTitle ?? edge?.relationshipTitle),
-      otherNodeId,
-      otherNode: nodes.value.find((n) => n.id === otherNodeId),
-    }
-  }),
-)
 
 const newEdgeVisible = ref(false)
 
@@ -83,12 +64,16 @@ const deleteEdgeMutation = reactive(
   }),
 )
 
-const deleteEdge = (row: (typeof edgeRows.value)[number]) => {
-  const otherTitle = row.otherNode?.title ?? row.otherNodeId
+const deleteEdge = (edge: Edge) => {
+  const outgoing = edge.fromNode === props.nodeId
+  const otherTitle = outgoing ? edge.toNodeTitle : edge.fromNodeTitle
+  const relationshipTitle = outgoing
+    ? edge.relationshipTitle
+    : edge.reverseRelationshipTitle
   if (
-    window.confirm(`Delete edge "${row.relationship ?? '?'} ${otherTitle}"?`)
+    window.confirm(`Delete edge "${relationshipTitle ?? '?'} ${otherTitle}"?`)
   ) {
-    deleteEdgeMutation.mutate(row.edge.id)
+    deleteEdgeMutation.mutate(edge.id)
   }
 }
 
@@ -168,29 +153,39 @@ const deleteNode = () => {
 
         <div v-else-if="edgesQuery.isError">error</div>
 
-        <div v-else-if="edgeRows.length === 0"><em>No edges</em></div>
+        <div v-else-if="edges.length === 0"><em>No edges</em></div>
 
         <ul v-else class="edge-list">
-          <li v-for="row in edgeRows" :key="row.edge.id" class="edge-row">
-            <span>
-              {{ row.relationship ?? '?' }}
+          <li v-for="edge in edges" :key="edge.id" class="edge-row">
+            <span v-if="edge.fromNode === node.id">
+              {{ edge.relationshipTitle ?? '?' }}
               <RouterLink
-                v-if="row.otherNode"
-                :to="`/w/${workspaceId}/nodes/${row.otherNode.id}`"
-                >{{ row.otherNode.title }}</RouterLink
+                v-if="edge.toNodeTitle"
+                :to="`/w/${workspaceId}/nodes/${edge.toNode}`"
+                >{{ edge.toNodeTitle }}</RouterLink
               >
-              <em v-else>{{ row.otherNodeId }}</em>
+              <em v-else>{{ edge.toNode }}</em>
             </span>
+            <span v-else>
+              {{ edge.reverseRelationshipTitle ?? '?' }}
+              <RouterLink
+                v-if="edge.fromNode"
+                :to="`/w/${workspaceId}/nodes/${edge.fromNode}`"
+                >{{ edge.fromNodeTitle }}</RouterLink
+              >
+              <em v-else>{{ edge.fromNode }}</em>
+            </span>
+
             <Button
               size="small"
               severity="danger"
               text
               :loading="
                 deleteEdgeMutation.isPending &&
-                deleteEdgeMutation.variables === row.edge.id
+                deleteEdgeMutation.variables === edge.id
               "
               :disabled="deleteEdgeMutation.isPending"
-              @click="deleteEdge(row)"
+              @click="deleteEdge(edge)"
             >
               Delete
             </Button>
@@ -215,11 +210,7 @@ const deleteNode = () => {
 
         <ul v-else class="note-list">
           <li v-for="note in notes" :key="note.id">
-            <NoteBody
-              :body="note.body"
-              :nodes="nodes"
-              :created-at="note.createdAt"
-            />
+            <NoteBody :body="note.body" :created-at="note.createdAt" />
           </li>
         </ul>
       </section>

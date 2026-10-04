@@ -7,7 +7,9 @@ export type Edge = {
   id: string
   edgeTypeId: string
   fromNode: string
+  fromNodeTitle: string
   toNode: string
+  toNodeTitle: string
   relationshipTitle: string
   reverseRelationshipTitle: string
 }
