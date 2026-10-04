@@ -14,6 +14,8 @@ import { useWorkspaceId } from '../api/use-current-workspace-query.ts'
 import { type Note, useNodeNotesQuery } from '../api/use-notes-query.ts'
 import NoteBody from '../notes/note-body.vue'
 import { flattenPages } from '../api/api-list.ts'
+import { getNodeTypeTitle } from './helpers.ts'
+import { useNodeTypesQuery } from '../api/use-node-types-query.ts'
 
 const props = defineProps<{
   node: Node
@@ -25,6 +27,7 @@ const workspaceId = useWorkspaceId()
 const edgesQuery = reactive(useNodeEdgesQuery(props.node.id))
 const edgeTypesQuery = reactive(useEdgeTypesQuery())
 const nodesQuery = reactive(useNodesQuery())
+const nodeTypesQuery = reactive(useNodeTypesQuery())
 const notesQuery = reactive(useNodeNotesQuery(props.node.id))
 
 const edges = computed<Edge[]>(() => edgesQuery.data?.items ?? [])
@@ -40,7 +43,7 @@ const edgeRows = computed(() =>
       edge,
       relationship: outgoing
         ? edge?.relationshipTitle
-        : edge?.reverseRelationshipTitle,
+        : (edge?.reverseRelationshipTitle ?? edge?.relationshipTitle),
       otherNodeId,
       otherNode: nodes.value.find((n) => n.id === otherNodeId),
     }
@@ -99,6 +102,10 @@ const deleteNode = () => {
 
 <template>
   <section class="section">
+    <div v-if="nodeTypesQuery.data?.items" class="section-node-type">
+      {{ getNodeTypeTitle(nodeTypesQuery.data.items, props.node.nodeTypeId) }}
+    </div>
+
     <div class="section-header">
       <h3>Edges</h3>
       <Button
@@ -169,7 +176,11 @@ const deleteNode = () => {
 
     <ul v-else class="note-list">
       <li v-for="note in notes" :key="note.id">
-        <NoteBody :body="note.body" :nodes="nodes" />
+        <NoteBody
+          :body="note.body"
+          :nodes="nodes"
+          :created-at="note.createdAt"
+        />
       </li>
     </ul>
   </section>
@@ -191,6 +202,11 @@ const deleteNode = () => {
 <style scoped>
 .section {
   padding-bottom: 1.5rem;
+}
+
+.section-node-type {
+  color: var(--p-text-color-secondary);
+  padding-bottom: 1rem;
 }
 
 .section-header {

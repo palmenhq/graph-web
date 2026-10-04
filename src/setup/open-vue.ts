@@ -1,6 +1,7 @@
 import type { App } from 'vue'
 import Button from 'openvue/button'
 import OpenVue, { type PrimeVueConfiguration } from 'openvue/config'
+import { definePreset } from '@openvue/themes'
 import Aura from '@openvue/themes/aura'
 import {
   AutoComplete,
@@ -20,8 +21,19 @@ import {
   Toolbar,
 } from 'openvue'
 
+// Small inputs keep a 16px font size so mobile browsers don't zoom on focus
+const Preset = definePreset(Aura, {
+  semantic: {
+    formField: {
+      sm: {
+        fontSize: '1rem',
+      },
+    },
+  },
+})
+
 export const setupOpenVue = (app: App) => {
-  app.use(OpenVue, { theme: { preset: Aura } } satisfies PrimeVueConfiguration)
+  app.use(OpenVue, { theme: { preset: Preset } } satisfies PrimeVueConfiguration)
 
   app.component('Button', Button)
   app.component('AutoComplete', AutoComplete)

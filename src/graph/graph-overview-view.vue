@@ -22,6 +22,7 @@ import NodeDialogContent from './node-dialog-content.vue'
 import NodeTitleEditor from './node-title-editor.vue'
 import NotesPanel from '../notes/notes-panel.vue'
 import { flattenPages } from '../api/api-list.ts'
+import { getNodeTypeTitle } from './helpers.ts'
 
 const workspaceQuery = reactive(useCurrentWorkspaceQuery())
 
@@ -56,9 +57,6 @@ const clearSearch = () => {
 const searchQuery = reactive(useNodeSearchQuery(search))
 
 const searchedNodes = computed<Node[]>(() => flattenPages(searchQuery.data))
-
-const nodeTypeTitle = (nodeTypeId: string) =>
-  nodeTypes.value.find((nodeType) => nodeType.id === nodeTypeId)?.title
 
 const route = useRoute()
 const router = useRouter()
@@ -216,8 +214,11 @@ const splitButtonModel = computed(() => {
             >
               <Card style="background: var(--p-surface-800); height: 100%">
                 <template #title>{{ node.title }}</template>
-                <template v-if="nodeTypeTitle(node.nodeTypeId)" #subtitle>
-                  {{ nodeTypeTitle(node.nodeTypeId) }}
+                <template
+                  v-if="getNodeTypeTitle(nodeTypes, node.nodeTypeId)"
+                  #subtitle
+                >
+                  {{ getNodeTypeTitle(nodeTypes, node.nodeTypeId) }}
                 </template>
               </Card>
             </RouterLink>

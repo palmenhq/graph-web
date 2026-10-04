@@ -8,7 +8,7 @@ import Text from '@tiptap/extension-text'
 import Mention from '@tiptap/extension-mention'
 import { Placeholder } from '@tiptap/extensions'
 import type { SuggestionProps } from '@tiptap/suggestion'
-import type { Node } from '../api/use-nodes-query.ts'
+import { useFetchNodeSuggestions } from '../api/use-nodes-query.ts'
 
 type MentionItem = {
   id: string
@@ -16,7 +16,6 @@ type MentionItem = {
 }
 
 const props = defineProps<{
-  nodes: Node[]
   placeholder?: string
 }>()
 
@@ -29,8 +28,14 @@ const suggestionIndex = ref(0)
 const suggestionRect = ref<DOMRect | null>(null)
 const suggestionOpen = ref(false)
 let suggestionCommand: ((item: MentionItem) => void) | null = null
+let latestQuery = ''
+
+const fetchNodeSuggestions = useFetchNodeSuggestions()
 
 const updateSuggestion = (p: SuggestionProps<MentionItem, MentionItem>) => {
+  if (p.query !== latestQuery) {
+    return
+  }
   suggestionItems.value = p.items
   suggestionRect.value = p.clientRect?.() ?? null
   suggestionCommand = p.command
@@ -57,12 +62,16 @@ const editor = useEditor({
       HTMLAttributes: { class: 'note-mention' },
       suggestion: {
         char: '@',
-        items: ({ query }): MentionItem[] => {
-          const q = query.toLowerCase()
-          return props.nodes
-            .filter((node) => node.title.toLowerCase().includes(q))
-            .slice(0, maxSuggestions)
-            .map((node) => ({ id: node.id, label: node.title }))
+        items: async ({ query }): Promise<MentionItem[]> => {
+          latestQuery = query
+          try {
+            const nodes = await fetchNodeSuggestions(query)
+            return nodes
+              .slice(0, maxSuggestions)
+              .map((node) => ({ id: node.id, label: node.title }))
+          } catch {
+            return []
+          }
         },
         render: () => ({
           onStart: (p) => {

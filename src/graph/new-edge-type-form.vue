@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import FormGroup from '../design/form-group.vue'
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { apiClient, url } from '../api'
 import { useWorkspaceId } from '../api/use-current-workspace-query.ts'
@@ -9,11 +9,16 @@ import Spinner from '../design/spinner.vue'
 export type CreatedEdgeType = {
   id?: string
   relationshipTitle: string
-  reverseRelationshipTitle: string
+  reverseRelationshipTitle: string | null
 }
 
 const props = defineProps<{
+  initialTitle?: string
   onSuccess?: (edgeType: CreatedEdgeType) => void
+}>()
+
+const emit = defineEmits<{
+  cancel: []
 }>()
 
 const workspaceId = useWorkspaceId()
@@ -24,7 +29,7 @@ const createEdgeTypeMutation = reactive(
     mutationKey: ['edge-types', 'new'],
     mutationFn: (edgeType: {
       relationshipTitle: string
-      reverseRelationshipTitle: string
+      reverseRelationshipTitle: string | null
     }) =>
       apiClient.post(
         url`/workspaces/${workspaceId}/graph/edgeTypes/create`,
@@ -45,13 +50,17 @@ const createEdgeTypeMutation = reactive(
   }),
 )
 
-const relationshipTitle = ref('')
+const relationshipTitle = ref(props.initialTitle ?? '')
 const reverseRelationshipTitle = ref('')
 
-const canSubmit = computed(
-  () =>
-    !!relationshipTitle.value.trim() && !!reverseRelationshipTitle.value.trim(),
+watch(
+  () => props.initialTitle,
+  (value) => {
+    relationshipTitle.value = value ?? ''
+  },
 )
+
+const canSubmit = computed(() => !!relationshipTitle.value.trim())
 
 const submit = () => {
   if (!canSubmit.value || createEdgeTypeMutation.isPending) {
@@ -60,7 +69,7 @@ const submit = () => {
 
   createEdgeTypeMutation.mutate({
     relationshipTitle: relationshipTitle.value.trim(),
-    reverseRelationshipTitle: reverseRelationshipTitle.value.trim(),
+    reverseRelationshipTitle: reverseRelationshipTitle.value.trim() || null,
   })
 }
 </script>
@@ -75,6 +84,7 @@ const submit = () => {
         <InputText
           id="edge-type-relationship-title"
           v-model="relationshipTitle"
+          autocapitalize="off"
           fluid
         />
         <label for="edge-type-relationship-title">Relationship title</label>
@@ -86,6 +96,7 @@ const submit = () => {
         <InputText
           id="edge-type-reverse-relationship-title"
           v-model="reverseRelationshipTitle"
+          autocapitalize="off"
           fluid
         />
         <label for="edge-type-reverse-relationship-title">
@@ -96,17 +107,22 @@ const submit = () => {
 
     <div v-if="createEdgeTypeMutation.isError">error</div>
 
-    <Button
-      type="button"
-      size="small"
-      :loading="createEdgeTypeMutation.isPending"
-      :disabled="!canSubmit"
-      @click="submit"
-    >
-      <Spinner v-if="createEdgeTypeMutation.isPending" />
+    <div class="edge-type-form-actions">
+      <Button type="button" link size="small" @click="emit('cancel')">
+        Cancel
+      </Button>
+      <Button
+        type="button"
+        size="small"
+        :loading="createEdgeTypeMutation.isPending"
+        :disabled="!canSubmit"
+        @click="submit"
+      >
+        <Spinner v-if="createEdgeTypeMutation.isPending" />
 
-      Create Edge Type
-    </Button>
+        Create Edge Type
+      </Button>
+    </div>
   </div>
 </template>
 
@@ -124,5 +140,10 @@ const submit = () => {
 
 .edge-type-form h4 {
   align-self: flex-start;
+}
+
+.edge-type-form-actions {
+  display: flex;
+  gap: 0.5rem;
 }
 </style>

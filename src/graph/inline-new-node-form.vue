@@ -15,6 +15,10 @@ const props = defineProps<{
   onSuccess?: (node: Node) => void
 }>()
 
+const emit = defineEmits<{
+  cancel: []
+}>()
+
 const workspaceId = useWorkspaceId()
 
 const title = ref(props.initialTitle)
@@ -119,17 +123,22 @@ const submit = () => {
 
     <div v-if="createNodeMutation.isError">error</div>
 
-    <Button
-      type="button"
-      size="small"
-      :loading="createNodeMutation.isPending"
-      :disabled="!canSubmit"
-      @click="submit"
-    >
-      <Spinner v-if="createNodeMutation.isPending" />
+    <div class="node-form-actions">
+      <Button type="button" link size="small" @click="emit('cancel')">
+        Cancel
+      </Button>
+      <Button
+        type="button"
+        size="small"
+        :loading="createNodeMutation.isPending"
+        :disabled="!canSubmit"
+        @click="submit"
+      >
+        <Spinner v-if="createNodeMutation.isPending" />
 
-      Create Node
-    </Button>
+        Create Node
+      </Button>
+    </div>
   </div>
 </template>
 
@@ -147,5 +156,10 @@ const submit = () => {
 
 .node-form h4 {
   align-self: flex-start;
+}
+
+.node-form-actions {
+  display: flex;
+  gap: 0.5rem;
 }
 </style>

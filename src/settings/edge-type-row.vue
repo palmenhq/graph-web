@@ -118,6 +118,7 @@ const remove = () => {
       <InputText
         v-model="relationshipTitle"
         autofocus
+        autocapitalize="off"
         size="small"
         class="row-input"
         placeholder="Relationship title"
@@ -126,6 +127,7 @@ const remove = () => {
       />
       <InputText
         v-model="reverseRelationshipTitle"
+        autocapitalize="off"
         size="small"
         class="row-input"
         placeholder="Reverse relationship title"

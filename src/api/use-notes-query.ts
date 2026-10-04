@@ -15,6 +15,7 @@ export type NewNote = {
 
 export type Note = NewNote & {
   id: string
+  createdAt: string
 }
 
 export const extractMentions = (doc: JSONContent): NoteMention[] => {

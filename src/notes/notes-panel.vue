@@ -70,7 +70,6 @@ const submit = () => {
       <NoteEditor
         ref="editorRef"
         v-model="noteBody"
-        :nodes="nodes"
         placeholder="Write a note, use @ to mention a node"
       />
 
@@ -78,7 +77,7 @@ const submit = () => {
         Could not save note
       </div>
 
-      <div>
+      <div style="display: flex; justify-content: flex-end">
         <Button
           type="submit"
           :disabled="!canSubmit"
@@ -99,7 +98,11 @@ const submit = () => {
 
     <ul v-else class="note-list">
       <li v-for="note in notes" :key="note.id">
-        <NoteBody :body="note.body" :nodes="nodes" />
+        <NoteBody
+          :body="note.body"
+          :nodes="nodes"
+          :created-at="note.createdAt"
+        />
       </li>
     </ul>
 
