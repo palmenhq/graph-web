@@ -9,6 +9,8 @@ import {
 import { type Edge, useNodeEdgesQuery } from '../api/use-node-edges-query.ts'
 import NewEdgeForm from './new-edge-form.vue'
 import { useWorkspaceId } from '../api/use-current-workspace-query.ts'
+import { type Note, useNodeNotesQuery } from '../api/use-notes-query.ts'
+import NoteBody from '../notes/note-body.vue'
 
 const props = defineProps<{
   node: Node
@@ -19,10 +21,12 @@ const workspaceId = useWorkspaceId()
 const edgesQuery = reactive(useNodeEdgesQuery(props.node.id))
 const edgeTypesQuery = reactive(useEdgeTypesQuery())
 const nodesQuery = reactive(useNodesQuery())
+const notesQuery = reactive(useNodeNotesQuery(props.node.id))
 
 const edges = computed<Edge[]>(() => edgesQuery.data?.items ?? [])
 const edgeTypes = computed<EdgeType[]>(() => edgeTypesQuery.data?.items ?? [])
 const nodes = computed<Node[]>(() => nodesQuery.data?.items ?? [])
+const notes = computed<Note[]>(() => notesQuery.data?.items ?? [])
 
 const edgeRows = computed(() =>
   edges.value.map((edge) => {
@@ -81,6 +85,30 @@ const newEdgeVisible = ref(false)
       />
     </div>
   </section>
+
+  <section class="section">
+    <div class="section-header">
+      <h3>Notes</h3>
+    </div>
+
+    <Spinner v-if="notesQuery.isPending" />
+
+    <div v-else-if="notesQuery.isError">error</div>
+
+    <div v-else-if="notes.length === 0">
+      <em>No notes mention this node</em>
+    </div>
+
+    <ul v-else class="note-list">
+      <li v-for="note in notes" :key="note.id">
+        <Card>
+          <template #content>
+            <NoteBody :body="note.body" :nodes="nodes" />
+          </template>
+        </Card>
+      </li>
+    </ul>
+  </section>
 </template>
 
 <style scoped>
@@ -97,5 +125,14 @@ const newEdgeVisible = ref(false)
 
 .sub-form {
   padding-top: 1rem;
+}
+
+.note-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 </style>

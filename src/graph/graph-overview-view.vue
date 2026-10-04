@@ -15,6 +15,7 @@ import { type Node, useNodesQuery } from '../api/use-nodes-query.ts'
 import NewNodeTypeForm from './new-node-type-form.vue'
 import NewNodeForm from './new-node-form.vue'
 import NodeDialogContent from './node-dialog-content.vue'
+import NotesPanel from '../notes/notes-panel.vue'
 
 const workspaceQuery = reactive(useCurrentWorkspaceQuery())
 
@@ -122,47 +123,55 @@ const splitButtonModel = computed(() => {
       </template>
     </PageHeader>
 
-    <Panel header="Graph">
-      <div v-if="nodeTypesQuery.isSuccess && nodeTypes.length > 0">
-        <Spinner v-if="nodesQuery.isPending" />
+    <div class="overview-layout">
+      <Panel header="Graph" class="overview-graph">
+        <div v-if="nodeTypesQuery.isSuccess && nodeTypes.length > 0">
+          <Spinner v-if="nodesQuery.isPending" />
 
-        <div v-else-if="nodesQuery.isError">error</div>
+          <div v-else-if="nodesQuery.isError">error</div>
 
-        <div v-else-if="nodes.length === 0"><em>No nodes found</em></div>
+          <div v-else-if="nodes.length === 0"><em>No nodes found</em></div>
 
-        <div v-else class="node-grid">
-          <RouterLink
-            v-for="node in nodes"
-            :key="node.id"
-            :to="nodeLink(node)"
-            class="node-card-link"
-          >
-            <Card class="node-card">
-              <template #title>{{ node.title }}</template>
-              <template v-if="nodeTypeTitle(node.nodeTypeId)" #subtitle>
-                {{ nodeTypeTitle(node.nodeTypeId) }}
-              </template>
-            </Card>
-          </RouterLink>
+          <div v-else class="node-grid">
+            <RouterLink
+              v-for="node in nodes"
+              :key="node.id"
+              :to="nodeLink(node)"
+              class="node-card-link"
+            >
+              <Card class="node-card">
+                <template #title>{{ node.title }}</template>
+                <template v-if="nodeTypeTitle(node.nodeTypeId)" #subtitle>
+                  {{ nodeTypeTitle(node.nodeTypeId) }}
+                </template>
+              </Card>
+            </RouterLink>
+          </div>
         </div>
-      </div>
 
-      <Spinner v-else-if="nodeTypesQuery.isPending" />
+        <Spinner v-else-if="nodeTypesQuery.isPending" />
 
-      <div v-else>
-        <div style="padding-bottom: 1rem"><em>No node types found</em></div>
-        <div>
-          <Button @click="openNewNodeTypeDrawer">Create Node Type</Button>
+        <div v-else>
+          <div style="padding-bottom: 1rem"><em>No node types found</em></div>
+          <div>
+            <Button @click="openNewNodeTypeDrawer">Create Node Type</Button>
+          </div>
         </div>
-      </div>
-    </Panel>
+      </Panel>
+
+      <NotesPanel class="overview-notes" :nodes="nodes" />
+    </div>
 
     <Dialog
       v-model:visible="nodeDialogVisible"
       modal
       :header="selectedNode?.title"
       dismissable-mask
-      style="width: 40rem; max-width: calc(100vw - 2rem); max-height: calc(100vh - 2rem)"
+      style="
+        width: 40rem;
+        max-width: calc(100vw - 2rem);
+        max-height: calc(100vh - 2rem);
+      "
     >
       <NodeDialogContent
         v-if="selectedNode"
@@ -201,6 +210,19 @@ const splitButtonModel = computed(() => {
 </template>
 
 <style scoped>
+.overview-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .overview-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .node-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
