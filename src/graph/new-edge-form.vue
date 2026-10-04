@@ -8,8 +8,13 @@ import { useWorkspaceId } from '../api/use-current-workspace-query.ts'
 import type { ApiList } from '../api/api-list.ts'
 import type { Node } from '../api/use-nodes-query.ts'
 import type { EdgeType } from '../api/use-edge-types-query.ts'
+import {
+  type NodeType,
+  useNodeTypesQuery,
+} from '../api/use-node-types-query.ts'
 import Spinner from '../design/spinner.vue'
 import NewEdgeTypeForm, { type CreatedEdgeType } from './new-edge-type-form.vue'
+import InlineNewNodeForm from './inline-new-node-form.vue'
 
 const props = defineProps<{
   node: Node
@@ -24,7 +29,28 @@ type RelationshipOption = {
   reverse: boolean
 }
 
+type CreateNodeOption = {
+  create: true
+  key: string
+  title: string
+}
+
+type TargetOption = Node | CreateNodeOption
+
+const isCreateOption = (option: unknown): option is CreateNodeOption =>
+  !!option && typeof option === 'object' && 'create' in option
+
 const workspaceId = useWorkspaceId()
+
+const nodeTypesQuery = reactive(useNodeTypesQuery())
+// Offer the current node's type first when creating a target node
+const nodeTypes = computed<NodeType[]>(() => {
+  const items = nodeTypesQuery.data?.items ?? []
+  return [
+    ...items.filter((t) => t.id === props.node.nodeTypeId),
+    ...items.filter((t) => t.id !== props.node.nodeTypeId),
+  ]
+})
 
 const relationshipOptions = computed<RelationshipOption[]>(() =>
   props.edgeTypes.flatMap((edgeType) => [
@@ -44,8 +70,8 @@ const relationshipOptions = computed<RelationshipOption[]>(() =>
 )
 
 const relationship = ref<RelationshipOption | null>(null)
-const targetNode = ref<Node | string | null>(null)
-const nodeSuggestions = ref<Node[]>([])
+const targetNode = ref<TargetOption | string | null>(null)
+const nodeSuggestions = ref<TargetOption[]>([])
 
 const newEdgeTypeVisible = ref(props.edgeTypes.length === 0)
 const pendingEdgeType = ref<CreatedEdgeType | null>(null)
@@ -66,12 +92,14 @@ watch(
 
     const created = pending.id
       ? props.edgeTypes.find((edgeType) => edgeType.id === pending.id)
-      : [...props.edgeTypes].reverse().find(
-          (edgeType) =>
-            edgeType.relationshipTitle === pending.relationshipTitle &&
-            edgeType.reverseRelationshipTitle ===
-              pending.reverseRelationshipTitle,
-        )
+      : [...props.edgeTypes]
+          .reverse()
+          .find(
+            (edgeType) =>
+              edgeType.relationshipTitle === pending.relationshipTitle &&
+              edgeType.reverseRelationshipTitle ===
+                pending.reverseRelationshipTitle,
+          )
     const option = relationshipOptions.value.find(
       (o) => o.edgeTypeId === created?.id && !o.reverse,
     )
@@ -87,18 +115,47 @@ const searchNodes = async (query: string) => {
   const response = await apiClient.get<ApiList<Node>>(
     url`/workspaces/${workspaceId}/graph/nodes/getAll?search=${query}`,
   )
-  nodeSuggestions.value = response.data.items.filter(
-    (node) => node.id !== props.node.id,
+  const nodes = response.data.items.filter((node) => node.id !== props.node.id)
+
+  const title = query.trim()
+  const exactMatch = nodes.some(
+    (node) => node.title.trim().toLowerCase() === title.toLowerCase(),
   )
+  const createOptions: CreateNodeOption[] =
+    title && !exactMatch ? [{ create: true, key: 'create', title }] : []
+
+  nodeSuggestions.value = [...nodes, ...createOptions]
 }
 
 const selectedTargetNode = computed<Node | null>(() =>
-  targetNode.value && typeof targetNode.value === 'object'
+  targetNode.value &&
+  typeof targetNode.value === 'object' &&
+  !isCreateOption(targetNode.value)
     ? targetNode.value
     : null,
 )
 
 const queryClient = useQueryClient()
+
+const newNodeVisible = ref(false)
+const newNodeTitle = ref('')
+
+const onTargetSelected = (option: TargetOption) => {
+  if (!isCreateOption(option)) {
+    return
+  }
+
+  // Open the inline form instead of selecting the placeholder option
+  targetNode.value = null
+  newNodeTitle.value = option.title
+  newNodeVisible.value = true
+}
+
+const onNodeCreated = (node: Node) => {
+  targetNode.value = node
+  newNodeVisible.value = false
+}
+
 const createEdgeMutation = reactive(
   useMutation({
     mutationKey: ['edges', 'new'],
@@ -181,10 +238,30 @@ const submit = () => {
           dropdown
           fluid
           @complete="searchNodes($event.query)"
-        />
+          @option-select="onTargetSelected($event.value)"
+        >
+          <template #option="{ option }">
+            <span v-if="isCreateOption(option)" class="create-node-option">
+              Create “{{ option.title }}”
+            </span>
+            <span v-else>{{ option.title }}</span>
+          </template>
+        </AutoComplete>
         <label for="edge-target-node">Target node</label>
       </IftaLabel>
+      <div v-if="newNodeVisible" class="edge-type-toggle">
+        <Button type="button" link size="small" @click="newNodeVisible = false">
+          Cancel new node
+        </Button>
+      </div>
     </FormGroup>
+
+    <InlineNewNodeForm
+      v-if="newNodeVisible"
+      :initial-title="newNodeTitle"
+      :node-types="nodeTypes"
+      @success="onNodeCreated"
+    />
 
     <div v-if="createEdgeMutation.isError">error</div>
 
@@ -204,5 +281,9 @@ const submit = () => {
 .edge-type-toggle {
   display: flex;
   justify-content: flex-end;
+}
+
+.create-node-option {
+  font-style: italic;
 }
 </style>
