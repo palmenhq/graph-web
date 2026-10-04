@@ -162,7 +162,7 @@ const splitButtonModel = computed(() => {
       modal
       :header="selectedNode?.title"
       dismissable-mask
-      style="width: 40rem"
+      style="width: 40rem; max-width: calc(100vw - 2rem); max-height: calc(100vh - 2rem)"
     >
       <NodeDialogContent
         v-if="selectedNode"

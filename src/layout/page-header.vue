@@ -27,6 +27,7 @@ defineProps<{
 .page-header {
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
   align-items: center;
   width: 100%;
   padding-bottom: 2rem;
