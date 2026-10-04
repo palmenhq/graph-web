@@ -177,6 +177,7 @@ const splitButtonModel = computed(() => {
         v-if="selectedNode"
         :key="selectedNode.id"
         :node="selectedNode"
+        @deleted="nodeDialogVisible = false"
       />
 
       <Spinner v-else-if="nodesQuery.isPending" />

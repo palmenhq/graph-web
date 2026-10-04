@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
+import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import { apiClient, url } from '../api'
 import Spinner from '../design/spinner.vue'
 import { type Node, useNodesQuery } from '../api/use-nodes-query.ts'
 import {
@@ -14,6 +16,7 @@ import NoteBody from '../notes/note-body.vue'
 
 const props = defineProps<{
   node: Node
+  onDeleted?: () => void
 }>()
 
 const workspaceId = useWorkspaceId()
@@ -44,6 +47,53 @@ const edgeRows = computed(() =>
 )
 
 const newEdgeVisible = ref(false)
+
+const queryClient = useQueryClient()
+
+const deleteEdgeMutation = reactive(
+  useMutation({
+    mutationKey: ['edges', 'delete'],
+    mutationFn: (id: string) =>
+      apiClient.post(url`/workspaces/${workspaceId}/graph/edges/delete`, {
+        id,
+      }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ['w', workspaceId, 'edges'],
+      }),
+  }),
+)
+
+const deleteEdge = (row: (typeof edgeRows.value)[number]) => {
+  const otherTitle = row.otherNode?.title ?? row.otherNodeId
+  if (
+    window.confirm(`Delete edge "${row.relationship ?? '?'} ${otherTitle}"?`)
+  ) {
+    deleteEdgeMutation.mutate(row.edge.id)
+  }
+}
+
+const deleteNodeMutation = reactive(
+  useMutation({
+    mutationKey: ['nodes', 'delete'],
+    mutationFn: (id: string) =>
+      apiClient.post(url`/workspaces/${workspaceId}/graph/nodes/delete`, {
+        id,
+      }),
+    onSuccess: () => {
+      props.onDeleted?.()
+      queryClient.invalidateQueries({ queryKey: ['w', workspaceId, 'nodes'] })
+      queryClient.invalidateQueries({ queryKey: ['w', workspaceId, 'edges'] })
+      queryClient.invalidateQueries({ queryKey: ['w', workspaceId, 'notes'] })
+    },
+  }),
+)
+
+const deleteNode = () => {
+  if (window.confirm(`Delete node "${props.node.title}" and all its edges?`)) {
+    deleteNodeMutation.mutate(props.node.id)
+  }
+}
 </script>
 
 <template>
@@ -66,16 +116,33 @@ const newEdgeVisible = ref(false)
     <div v-else-if="edgeRows.length === 0"><em>No edges</em></div>
 
     <ul v-else>
-      <li v-for="row in edgeRows" :key="row.edge.id">
-        {{ row.relationship ?? '?' }}
-        <RouterLink
-          v-if="row.otherNode"
-          :to="`/w/${workspaceId}/nodes/${row.otherNode.id}`"
-          >{{ row.otherNode.title }}</RouterLink
+      <li v-for="row in edgeRows" :key="row.edge.id" class="edge-row">
+        <span>
+          {{ row.relationship ?? '?' }}
+          <RouterLink
+            v-if="row.otherNode"
+            :to="`/w/${workspaceId}/nodes/${row.otherNode.id}`"
+            >{{ row.otherNode.title }}</RouterLink
+          >
+          <em v-else>{{ row.otherNodeId }}</em>
+        </span>
+        <Button
+          size="small"
+          severity="danger"
+          text
+          :loading="
+            deleteEdgeMutation.isPending &&
+            deleteEdgeMutation.variables === row.edge.id
+          "
+          :disabled="deleteEdgeMutation.isPending"
+          @click="deleteEdge(row)"
         >
-        <em v-else>{{ row.otherNodeId }}</em>
+          Delete
+        </Button>
       </li>
     </ul>
+
+    <div v-if="deleteEdgeMutation.isError">error deleting edge</div>
 
     <div v-if="newEdgeVisible" class="sub-form">
       <NewEdgeForm
@@ -109,6 +176,18 @@ const newEdgeVisible = ref(false)
       </li>
     </ul>
   </section>
+
+  <section class="danger-zone">
+    <div v-if="deleteNodeMutation.isError">error deleting node</div>
+    <Button
+      severity="danger"
+      outlined
+      :loading="deleteNodeMutation.isPending"
+      @click="deleteNode"
+    >
+      Delete Node
+    </Button>
+  </section>
 </template>
 
 <style scoped>
@@ -121,6 +200,20 @@ const newEdgeVisible = ref(false)
   justify-content: space-between;
   align-items: center;
   padding-bottom: 0.5rem;
+}
+
+.edge-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.danger-zone {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1rem;
 }
 
 .sub-form {

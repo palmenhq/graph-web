@@ -32,7 +32,10 @@ type RelationshipOption = {
 type CreateNodeOption = {
   create: true
   key: string
+  // Display label; must differ from the typed query, otherwise force-selection
+  // matches this option on blur and selects it instead of the clicked node
   title: string
+  newTitle: string
 }
 
 type TargetOption = Node | CreateNodeOption
@@ -122,7 +125,16 @@ const searchNodes = async (query: string) => {
     (node) => node.title.trim().toLowerCase() === title.toLowerCase(),
   )
   const createOptions: CreateNodeOption[] =
-    title && !exactMatch ? [{ create: true, key: 'create', title }] : []
+    title && !exactMatch
+      ? [
+          {
+            create: true,
+            key: 'create',
+            title: `Create “${title}”`,
+            newTitle: title,
+          },
+        ]
+      : []
 
   nodeSuggestions.value = [...nodes, ...createOptions]
 }
@@ -147,7 +159,7 @@ const onTargetSelected = (option: TargetOption) => {
 
   // Open the inline form instead of selecting the placeholder option
   targetNode.value = null
-  newNodeTitle.value = option.title
+  newNodeTitle.value = option.newTitle
   newNodeVisible.value = true
 }
 
@@ -242,7 +254,7 @@ const submit = () => {
         >
           <template #option="{ option }">
             <span v-if="isCreateOption(option)" class="create-node-option">
-              Create “{{ option.title }}”
+              {{ option.title }}
             </span>
             <span v-else>{{ option.title }}</span>
           </template>
