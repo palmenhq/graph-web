@@ -6,7 +6,7 @@ import type { ApiList } from './api-list.ts'
 export type EdgeType = {
   id: string
   relationshipTitle: string
-  reverseRelationshipTitle: string
+  reverseRelationshipTitle: string | null
   createdAt: string
   workspaceId: string
 }

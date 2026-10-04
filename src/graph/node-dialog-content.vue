@@ -168,11 +168,7 @@ const deleteNode = () => {
 
     <ul v-else class="note-list">
       <li v-for="note in notes" :key="note.id">
-        <Card>
-          <template #content>
-            <NoteBody :body="note.body" :nodes="nodes" />
-          </template>
-        </Card>
+        <NoteBody :body="note.body" :nodes="nodes" />
       </li>
     </ul>
   </section>
@@ -184,6 +180,7 @@ const deleteNode = () => {
       outlined
       :loading="deleteNodeMutation.isPending"
       @click="deleteNode"
+      size="small"
     >
       Delete Node
     </Button>

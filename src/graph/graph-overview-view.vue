@@ -112,6 +112,9 @@ const splitButtonModel = computed(() => {
       </template>
 
       <template #actions>
+        <RouterLink :to="`/w/${workspaceQuery.data?.id}/settings`">
+          <Button severity="secondary" text>Settings</Button>
+        </RouterLink>
         <SplitButton
           v-if="nodeTypes.length > 0"
           :label="splitButtonLabel"
@@ -140,7 +143,7 @@ const splitButtonModel = computed(() => {
               :to="nodeLink(node)"
               class="node-card-link"
             >
-              <Card class="node-card">
+              <Card style="background: var(--p-surface-800); height: 100%">
                 <template #title>{{ node.title }}</template>
                 <template v-if="nodeTypeTitle(node.nodeTypeId)" #subtitle>
                   {{ nodeTypeTitle(node.nodeTypeId) }}
@@ -243,10 +246,11 @@ const splitButtonModel = computed(() => {
   color: inherit;
   text-decoration: none;
   border-radius: var(--p-card-border-radius);
+  border: 2px solid var(--p-content-border-color);
 }
 
 .node-card-link:hover,
 .node-card-link:focus-visible {
-  outline: 2px solid var(--p-primary-color);
+  border: 2px solid var(--p-primary-color);
 }
 </style>

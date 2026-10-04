@@ -63,12 +63,16 @@ const relationshipOptions = computed<RelationshipOption[]>(() =>
       edgeTypeId: edgeType.id,
       reverse: false,
     },
-    {
-      key: `${edgeType.id}-r`,
-      label: edgeType.reverseRelationshipTitle,
-      edgeTypeId: edgeType.id,
-      reverse: true,
-    },
+    ...(edgeType.reverseRelationshipTitle
+      ? [
+          {
+            key: `${edgeType.id}-r`,
+            label: edgeType.reverseRelationshipTitle,
+            edgeTypeId: edgeType.id,
+            reverse: true,
+          },
+        ]
+      : []),
   ]),
 )
 

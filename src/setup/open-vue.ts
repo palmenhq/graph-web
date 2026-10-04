@@ -5,6 +5,7 @@ import Aura from '@openvue/themes/aura'
 import {
   AutoComplete,
   Card,
+  DataView,
   Dialog,
   Drawer,
   IftaLabel,
@@ -25,6 +26,7 @@ export const setupOpenVue = (app: App) => {
   app.component('Button', Button)
   app.component('AutoComplete', AutoComplete)
   app.component('Card', Card)
+  app.component('DataView', DataView)
   app.component('Dialog', Dialog)
   app.component('Drawer', Drawer)
   app.component('IftaLabel', IftaLabel)

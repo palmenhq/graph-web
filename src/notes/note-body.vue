@@ -25,27 +25,35 @@ const mentionLink = (inline: JSONContent) =>
 </script>
 
 <template>
-  <div class="note-body">
-    <p v-for="(paragraph, pIndex) in paragraphs" :key="pIndex">
-      <template
-        v-for="(inline, iIndex) in paragraph.content ?? []"
-        :key="iIndex"
-      >
-        <RouterLink
-          v-if="inline.type === 'mention'"
-          :to="mentionLink(inline)"
-          class="note-mention"
-          >@{{ mentionLabel(inline) }}</RouterLink
-        >
-        <template v-else-if="inline.type === 'text'">{{
-          inline.text
-        }}</template>
-      </template>
-    </p>
-  </div>
+  <Card class="card">
+    <template #content>
+      <div class="note-body">
+        <p v-for="(paragraph, pIndex) in paragraphs" :key="pIndex">
+          <template
+            v-for="(inline, iIndex) in paragraph.content ?? []"
+            :key="iIndex"
+          >
+            <RouterLink
+              v-if="inline.type === 'mention'"
+              :to="mentionLink(inline)"
+              class="note-mention"
+              >@{{ mentionLabel(inline) }}</RouterLink
+            >
+            <template v-else-if="inline.type === 'text'">{{
+              inline.text
+            }}</template>
+          </template>
+        </p>
+      </div>
+    </template>
+  </Card>
 </template>
 
 <style scoped>
+.card {
+  border: 1px solid var(--p-content-border-color);
+}
+
 .note-body p {
   margin: 0;
   min-height: 1lh;
