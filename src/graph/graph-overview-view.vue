@@ -200,7 +200,7 @@ const splitButtonModel = computed(() => {
               :to="nodeLink(node)"
               class="node-card-link"
             >
-              <Card style="background: var(--p-surface-800); height: 100%">
+              <Card style="height: 100%">
                 <template #title>{{ node.title }}</template>
                 <template
                   v-if="getNodeTypeTitle(nodeTypes, node.nodeTypeId)"
