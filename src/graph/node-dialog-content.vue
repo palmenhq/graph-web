@@ -115,7 +115,7 @@ const deleteNode = () => {
 
     <div v-else-if="edgeRows.length === 0"><em>No edges</em></div>
 
-    <ul v-else>
+    <ul v-else class="edge-list">
       <li v-for="row in edgeRows" :key="row.edge.id" class="edge-row">
         <span>
           {{ row.relationship ?? '?' }}
@@ -200,6 +200,15 @@ const deleteNode = () => {
   justify-content: space-between;
   align-items: center;
   padding-bottom: 0.5rem;
+}
+
+.edge-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .edge-row {
