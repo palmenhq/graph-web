@@ -8,7 +8,6 @@ import {
 } from '../api/use-edge-types-query.ts'
 import { type Edge, useNodeEdgesQuery } from '../api/use-node-edges-query.ts'
 import NewEdgeForm from './new-edge-form.vue'
-import NewEdgeTypeForm from './new-edge-type-form.vue'
 import { useWorkspaceId } from '../api/use-current-workspace-query.ts'
 
 const props = defineProps<{
@@ -41,7 +40,6 @@ const edgeRows = computed(() =>
 )
 
 const newEdgeVisible = ref(false)
-const newEdgeTypeVisible = ref(false)
 </script>
 
 <template>
@@ -50,7 +48,7 @@ const newEdgeTypeVisible = ref(false)
       <h3>Edges</h3>
       <Button
         size="small"
-        :disabled="edgeTypes.length === 0"
+        :disabled="edgeTypesQuery.isPending"
         @click="newEdgeVisible = !newEdgeVisible"
       >
         {{ newEdgeVisible ? 'Cancel' : 'Add Edge' }}
@@ -81,32 +79,6 @@ const newEdgeTypeVisible = ref(false)
         :edge-types="edgeTypes"
         @success="newEdgeVisible = false"
       />
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="section-header">
-      <h3>Edge Types</h3>
-      <Button size="small" @click="newEdgeTypeVisible = !newEdgeTypeVisible">
-        {{ newEdgeTypeVisible ? 'Cancel' : 'Add Edge Type' }}
-      </Button>
-    </div>
-
-    <Spinner v-if="edgeTypesQuery.isPending" />
-
-    <div v-else-if="edgeTypesQuery.isError">error</div>
-
-    <div v-else-if="edgeTypes.length === 0"><em>No edge types</em></div>
-
-    <ul v-else>
-      <li v-for="edgeType in edgeTypes" :key="edgeType.id">
-        {{ edgeType.relationshipTitle }} /
-        {{ edgeType.reverseRelationshipTitle }}
-      </li>
-    </ul>
-
-    <div v-if="newEdgeTypeVisible" class="sub-form">
-      <NewEdgeTypeForm @success="newEdgeTypeVisible = false" />
     </div>
   </section>
 </template>
