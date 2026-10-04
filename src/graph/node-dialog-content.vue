@@ -69,7 +69,7 @@ const deleteEdge = (edge: Edge) => {
   const otherTitle = outgoing ? edge.toNodeTitle : edge.fromNodeTitle
   const relationshipTitle = outgoing
     ? edge.relationshipTitle
-    : edge.reverseRelationshipTitle
+    : (edge.reverseRelationshipTitle ?? edge.relationshipTitle)
   if (
     window.confirm(`Delete edge "${relationshipTitle ?? '?'} ${otherTitle}"?`)
   ) {
@@ -158,7 +158,7 @@ const deleteNode = () => {
         <ul v-else class="edge-list">
           <li v-for="edge in edges" :key="edge.id" class="edge-row">
             <span v-if="edge.fromNode === node.id">
-              {{ edge.relationshipTitle ?? '?' }}
+              {{ edge.relationshipTitle }}
               <RouterLink
                 v-if="edge.toNodeTitle"
                 :to="`/w/${workspaceId}/nodes/${edge.toNode}`"
@@ -167,7 +167,7 @@ const deleteNode = () => {
               <em v-else>{{ edge.toNode }}</em>
             </span>
             <span v-else>
-              {{ edge.reverseRelationshipTitle ?? '?' }}
+              {{ edge.reverseRelationshipTitle ?? edge.relationshipTitle }}
               <RouterLink
                 v-if="edge.fromNode"
                 :to="`/w/${workspaceId}/nodes/${edge.fromNode}`"
