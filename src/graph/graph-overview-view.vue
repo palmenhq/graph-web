@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   useCurrentWorkspaceQuery,
@@ -11,7 +11,11 @@ import {
   type NodeType,
   useNodeTypesQuery,
 } from '../api/use-node-types-query.ts'
-import { type Node, useNodesQuery } from '../api/use-nodes-query.ts'
+import {
+  type Node,
+  useNodeSearchQuery,
+  useNodesQuery,
+} from '../api/use-nodes-query.ts'
 import NewNodeTypeForm from './new-node-type-form.vue'
 import NewNodeForm from './new-node-form.vue'
 import NodeDialogContent from './node-dialog-content.vue'
@@ -27,6 +31,30 @@ const nodeTypes = computed<NodeType[]>(() => nodeTypesQuery.data?.items ?? [])
 const nodesQuery = reactive(useNodesQuery())
 
 const nodes = computed<Node[]>(() => nodesQuery.data?.items ?? [])
+
+const searchInput = ref('')
+const search = ref('')
+
+let searchTimeout: ReturnType<typeof setTimeout> | undefined
+
+watch(searchInput, (value) => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    search.value = value
+  }, 300)
+})
+
+onBeforeUnmount(() => clearTimeout(searchTimeout))
+
+const clearSearch = () => {
+  searchInput.value = ''
+  clearTimeout(searchTimeout)
+  search.value = ''
+}
+
+const searchQuery = reactive(useNodeSearchQuery(search))
+
+const searchedNodes = computed<Node[]>(() => searchQuery.data?.items ?? [])
 
 const nodeTypeTitle = (nodeTypeId: string) =>
   nodeTypes.value.find((nodeType) => nodeType.id === nodeTypeId)?.title
@@ -129,16 +157,58 @@ const splitButtonModel = computed(() => {
 
     <div class="overview-layout">
       <Panel header="Graph" class="overview-graph">
+        <template #icons>
+          <div
+            v-if="nodeTypesQuery.isSuccess && nodeTypes.length > 0"
+            class="search-field"
+          >
+            <InputText
+              v-model="searchInput"
+              type="search"
+              placeholder="Search nodes"
+              aria-label="Search nodes"
+              class="search-input"
+              @keydown.esc="clearSearch"
+            />
+            <button
+              v-if="searchInput"
+              type="button"
+              class="search-clear"
+              aria-label="Clear search"
+              @click="clearSearch"
+            >
+              <svg
+                viewBox="0 0 16 16"
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                aria-hidden="true"
+              >
+                <path d="M4 4l8 8M12 4l-8 8" />
+              </svg>
+            </button>
+          </div>
+        </template>
+
         <div v-if="nodeTypesQuery.isSuccess && nodeTypes.length > 0">
-          <Spinner v-if="nodesQuery.isPending" />
+          <Spinner v-if="searchQuery.isPending" />
 
-          <div v-else-if="nodesQuery.isError">error</div>
+          <div v-else-if="searchQuery.isError">error</div>
 
-          <div v-else-if="nodes.length === 0"><em>No nodes found</em></div>
+          <div v-else-if="searchedNodes.length === 0">
+            <em>No nodes found</em>
+          </div>
 
-          <div v-else class="node-grid">
+          <div
+            v-else
+            class="node-grid"
+            :class="{ 'node-grid-stale': searchQuery.isPlaceholderData }"
+          >
             <RouterLink
-              v-for="node in nodes"
+              v-for="node in searchedNodes"
               :key="node.id"
               :to="nodeLink(node)"
               class="node-card-link"
@@ -235,10 +305,48 @@ const splitButtonModel = computed(() => {
   }
 }
 
+.search-field {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.search-input {
+  padding-right: 2.25rem;
+}
+
+.search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.search-clear {
+  position: absolute;
+  right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--p-text-muted-color);
+  cursor: pointer;
+}
+
+.search-clear:hover,
+.search-clear:focus-visible {
+  color: var(--p-text-color);
+}
+
 .node-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
   gap: 1rem;
+}
+
+.node-grid-stale {
+  opacity: 0.6;
 }
 
 .node-card-link {

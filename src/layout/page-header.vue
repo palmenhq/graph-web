@@ -31,17 +31,24 @@ defineProps<{
   align-items: center;
   width: 100%;
   padding-bottom: 2rem;
+  gap: 1rem;
 }
 
 .header {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 1rem;
+  flex: 0 1 auto;
+  margin-left: auto;
 }
 </style>
