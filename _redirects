@@ -1,0 +1,2 @@
+/api/*          https://graph-server.palmenhq.dev/api/:splat
+/auth/token     https://graph-server.palmenhq.dev/auth/token
