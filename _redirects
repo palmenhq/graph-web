@@ -1,2 +1,3 @@
-/api/*          https://graph-server.palmenhq.dev/api/:splat
-/auth/token     https://graph-server.palmenhq.dev/auth/token
+/api/*          https://graph-server.palmenhq.dev/api/:splat    200
+/auth/token     https://graph-server.palmenhq.dev/auth/token    200
+/*              /index.html                                     200
