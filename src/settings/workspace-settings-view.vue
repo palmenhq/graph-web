@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { useQueryClient } from '@tanstack/vue-query'
 import PageHeader from '../layout/page-header.vue'
 import Spinner from '../design/spinner.vue'
 import NodeTypeRow from './node-type-row.vue'
@@ -16,11 +18,21 @@ import {
   type EdgeType,
   useEdgeTypesQuery,
 } from '../api/use-edge-types-query.ts'
+import { setSessionToken } from '../api/session.ts'
 
 const workspaceId = useWorkspaceId()
 const workspaceQuery = reactive(useCurrentWorkspaceQuery())
 const nodeTypesQuery = reactive(useNodeTypesQuery())
 const edgeTypesQuery = reactive(useEdgeTypesQuery())
+
+const router = useRouter()
+const queryClient = useQueryClient()
+
+const logOut = async () => {
+  setSessionToken(null)
+  await router.replace('/login')
+  queryClient.clear()
+}
 </script>
 
 <template>
@@ -79,6 +91,10 @@ const edgeTypesQuery = reactive(useEdgeTypesQuery())
             <em>No edge types</em>
           </template>
         </DataView>
+      </Panel>
+
+      <Panel header="Account">
+        <Button severity="danger" outlined @click="logOut">Log out</Button>
       </Panel>
     </div>
   </template>

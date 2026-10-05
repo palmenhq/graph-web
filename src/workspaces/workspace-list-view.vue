@@ -47,11 +47,11 @@ const newDrawerVisible = ref(false)
   </div>
   <div v-if="workspacesQuery.isError">error</div>
   <div v-if="workspacesQuery.isSuccess">
-    <div v-if="workspacesQuery.data.items.length === 0">
-      <em>No workspaces</em>
-    </div>
-
     <Panel header="Workspaces">
+      <div v-if="workspacesQuery.data.items.length === 0">
+        <em>No workspaces</em>
+      </div>
+
       <ul>
         <li v-for="workspace in workspacesQuery.data.items" :key="workspace.id">
           <router-link :to="`/w/${workspace.id}`">

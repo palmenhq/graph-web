@@ -3,9 +3,12 @@ import type { App } from 'vue'
 import WorkspaceListView from '../workspaces/workspace-list-view.vue'
 import GraphOverviewView from '../graph/graph-overview-view.vue'
 import WorkspaceSettingsView from '../settings/workspace-settings-view.vue'
+import LoginView from '../auth/login-view.vue'
 
 export const setupRouter = (app: App) => {
   const routes = [
+    { path: '/', redirect: '/w' },
+    { path: '/login', component: LoginView },
     { path: '/w/:workspaceId', component: GraphOverviewView },
     { path: '/w/:workspaceId/nodes/:nodeId', component: GraphOverviewView },
     { path: '/w/:workspaceId/settings', component: WorkspaceSettingsView },
@@ -15,4 +18,6 @@ export const setupRouter = (app: App) => {
   const router = createRouter({ history: createWebHistory(), routes })
 
   app.use(router)
+
+  return router
 }
