@@ -2,14 +2,12 @@
 import { computed, onBeforeUnmount, ref } from 'vue'
 import type { JSONContent } from '@tiptap/core'
 import { format, formatDistance, isValid, parseISO } from 'date-fns'
-import { useWorkspaceId } from '../api/use-current-workspace-query.ts'
+import RichText from '../design/rich-text.vue'
 
 const props = defineProps<{
-  body: JSONContent
+  body: JSONContent | string
   createdAt?: string
 }>()
-
-const workspaceId = useWorkspaceId()
 
 // Refresh the relative timestamp every minute
 const now = ref(new Date())
@@ -31,39 +29,12 @@ const createdAtRelative = computed(() =>
     ? formatDistance(createdAtDate.value, now.value, { addSuffix: true })
     : null,
 )
-
-const paragraphs = computed<JSONContent[]>(() =>
-  (props.body.content ?? []).filter((block) => block.type === 'paragraph'),
-)
-
-const mentionLabel = (inline: JSONContent) =>
-  inline.attrs?.label ?? inline.attrs?.id
-
-const mentionLink = (inline: JSONContent) =>
-  `/w/${workspaceId}/nodes/${inline.attrs?.id}`
 </script>
 
 <template>
   <Card class="card">
     <template #content>
-      <div class="note-body">
-        <p v-for="(paragraph, pIndex) in paragraphs" :key="pIndex">
-          <template
-            v-for="(inline, iIndex) in paragraph.content ?? []"
-            :key="iIndex"
-          >
-            <RouterLink
-              v-if="inline.type === 'mention'"
-              :to="mentionLink(inline)"
-              class="note-mention"
-              >@{{ mentionLabel(inline) }}</RouterLink
-            >
-            <template v-else-if="inline.type === 'text'">{{
-              inline.text
-            }}</template>
-          </template>
-        </p>
-      </div>
+      <RichText :content="body" />
       <time
         v-if="createdAtDate"
         class="note-created-at"
@@ -81,26 +52,10 @@ const mentionLink = (inline: JSONContent) =>
   border: 1px solid var(--p-content-border-color);
 }
 
-.note-body p {
-  margin: 0;
-  min-height: 1lh;
-  white-space: pre-wrap;
-}
-
 .note-created-at {
   display: block;
   padding-top: 0.5rem;
   color: var(--p-text-muted-color);
   font-size: 0.875rem;
-}
-
-.note-mention {
-  color: var(--p-primary-color);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.note-mention:hover {
-  text-decoration: underline;
 }
 </style>

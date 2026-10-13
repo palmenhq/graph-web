@@ -10,12 +10,12 @@ import {
   type NewNote,
   type Note,
   extractMentions,
-  isEmptyNoteBody,
   useNotesQuery,
 } from '../api/use-notes-query.ts'
 import Spinner from '../design/spinner.vue'
-import NoteEditor from './note-editor.vue'
+import NoteEditor from '../design/rich-text-editor.vue'
 import NoteBody from './note-body.vue'
+import { isEmptyNoteBody } from '../design/rich-text-utils.ts'
 
 defineProps<{
   nodes: Node[]
@@ -98,11 +98,7 @@ const submit = () => {
 
     <ul v-else class="note-list">
       <li v-for="note in notes" :key="note.id">
-        <NoteBody
-          :body="note.body"
-          :nodes="nodes"
-          :created-at="note.createdAt"
-        />
+        <NoteBody :body="note.body" :created-at="note.createdAt" />
       </li>
     </ul>
 

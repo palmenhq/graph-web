@@ -3,11 +3,17 @@ import { apiClient, url } from './index.ts'
 import { useWorkspaceId } from './use-current-workspace-query.ts'
 
 export type PropertyValueType =
-  'text' | 'instagram' | 'tiktok' | 'phone' | 'email'
+  | 'text'
+  | 'textarea'
+  | 'instagram'
+  | 'tiktok'
+  | 'phone'
+  | 'email'
 
 export const propertyValueTypes: { value: PropertyValueType; label: string }[] =
   [
     { value: 'text', label: 'Text' },
+    { value: 'textarea', label: 'Textarea' },
     { value: 'email', label: 'Email' },
     { value: 'phone', label: 'Phone' },
     { value: 'instagram', label: 'Instagram' },

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { PropertyValueType } from '../api/use-node-query.ts'
+import RichText from '../design/rich-text.vue'
+import { isEmptyNoteBody, parseNoteBody } from '../design/rich-text-utils.ts'
 
 const props = defineProps<{
   valueType: PropertyValueType
@@ -11,6 +13,7 @@ type Display =
   | { kind: 'empty' }
   | { kind: 'text'; label: string }
   | { kind: 'link'; label: string; href: string; external: boolean }
+  | { kind: 'textarea'; value: string }
 
 const handlePattern = /^[A-Za-z0-9._]{1,30}$/
 
@@ -30,6 +33,13 @@ const display = computed<Display>(() => {
   }
 
   switch (props.valueType) {
+    case 'textarea': {
+      const doc = parseNoteBody(props.value)
+      if (!doc || isEmptyNoteBody(doc)) {
+        return { kind: 'empty' }
+      }
+      return { kind: 'textarea', value: props.value! }
+    }
     case 'instagram': {
       const handle = parseHandle(raw, 'instagram\\.com')
       return handle
@@ -99,6 +109,11 @@ const display = computed<Display>(() => {
   >
     {{ display.label }}
   </a>
+  <RichText
+    v-else-if="display.kind === 'textarea'"
+    class="property-value"
+    :content="display.value"
+  />
   <span v-else class="property-value">{{ display.label }}</span>
 </template>
 

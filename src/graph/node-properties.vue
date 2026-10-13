@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
+import type { JSONContent } from '@tiptap/core'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { apiClient, url } from '../api'
 import Spinner from '../design/spinner.vue'
@@ -14,6 +15,8 @@ import {
   useNodeQuery,
 } from '../api/use-node-query.ts'
 import NodePropertyValue from './node-property-value.vue'
+import RichTextEditor from '../design/rich-text-editor.vue'
+import { parseNoteBody, serializeNoteBody } from '../design/rich-text-utils.ts'
 
 const props = defineProps<{
   node: Pick<Node, 'id' | 'nodeTypeId'>
@@ -33,6 +36,7 @@ const nodeQueryKey = ['w', workspaceId, 'nodes', 'byId', props.node.id]
 // Editing a value
 const editingPropertyId = ref<string | null>(null)
 const draftValue = ref('')
+const draftNoteBody = ref<JSONContent | null>(null)
 
 const setValueMutation = reactive(
   useMutation({
@@ -63,7 +67,11 @@ const setValueMutation = reactive(
 
 const startEditing = (property: PropertyValue) => {
   setValueMutation.reset()
-  draftValue.value = property.value ?? ''
+  if (property.valueType === 'textarea') {
+    draftNoteBody.value = parseNoteBody(property.value)
+  } else {
+    draftValue.value = property.value ?? ''
+  }
   editingPropertyId.value = property.propertyId
 }
 
@@ -79,8 +87,16 @@ const saveValue = () => {
   }
 
   const current = properties.value.find((p) => p.propertyId === propertyId)
-  const value = draftValue.value.trim() || null
-  if ((current?.value ?? null) === value) {
+  if (!current) {
+    return
+  }
+
+  const value =
+    current.valueType === 'textarea'
+      ? serializeNoteBody(draftNoteBody.value)
+      : draftValue.value.trim() || null
+
+  if ((current.value ?? null) === value) {
     editingPropertyId.value = null
     return
   }
@@ -166,7 +182,15 @@ const submitNewProperty = () => {
             class="property-editor"
             @submit.prevent="saveValue"
           >
+            <RichTextEditor
+              v-if="property.valueType === 'textarea'"
+              v-model="draftNoteBody"
+              autofocus
+              class="property-input"
+              @keydown.esc.stop.prevent="cancelEditing"
+            />
             <InputText
+              v-else
               v-model="draftValue"
               autofocus
               size="small"
@@ -307,7 +331,7 @@ const submitNewProperty = () => {
 
 .property-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
   min-height: 2.25rem;
 }
@@ -318,15 +342,23 @@ const submitNewProperty = () => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 2rem;
+  max-width: 25vw;
 }
 
 .property-editor,
 .property-display {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
   flex: 1;
   min-width: 0;
+  min-height: 2.25rem;
+}
+
+.property-display .property-value {
+  padding-top: 0.25rem;
+  line-height: 1.5;
 }
 
 .property-input {

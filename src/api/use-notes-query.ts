@@ -32,15 +32,6 @@ export const extractMentions = (doc: JSONContent): NoteMention[] => {
   return [...nodeIds].map((nodeId) => ({ nodeId }))
 }
 
-export const isEmptyNoteBody = (doc: JSONContent): boolean => {
-  const hasContent = (content: JSONContent): boolean =>
-    content.type === 'mention' ||
-    (content.type === 'text' && !!content.text?.trim()) ||
-    (content.content ?? []).some(hasContent)
-
-  return !hasContent(doc)
-}
-
 export const useNotesQuery = () => {
   const workspaceId = useWorkspaceId()
 

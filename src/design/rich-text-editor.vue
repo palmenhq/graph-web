@@ -17,6 +17,7 @@ type MentionItem = {
 
 const props = defineProps<{
   placeholder?: string
+  autofocus?: boolean | 'start' | 'end' | 'all' | number
 }>()
 
 const model = defineModel<JSONContent | null>({ default: null })
@@ -53,6 +54,7 @@ const selectSuggestion = (index: number) => {
 
 const editor = useEditor({
   content: model.value ?? '',
+  autofocus: props.autofocus ?? false,
   extensions: [
     Document,
     Paragraph,
@@ -165,6 +167,10 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.note-editor {
+  position: relative;
+}
+
 .note-editor :deep(.tiptap) {
   min-height: 4rem;
   padding: 0.5rem 0.75rem;
@@ -189,11 +195,6 @@ onBeforeUnmount(() => {
   height: 0;
   pointer-events: none;
   color: var(--p-form-field-placeholder-color);
-}
-
-.note-editor :deep(.note-mention) {
-  color: var(--p-primary-color);
-  font-weight: 600;
 }
 
 .note-suggestions {
