@@ -13,6 +13,7 @@
     "@tanstack/vue-query": "^5.104.0",
     "@tiptap/core": "^3.31.4",
     "@tiptap/extension-document": "^3.31.4",
+    "@tiptap/extension-link": "^3.31.4",
     "@tiptap/extension-mention": "^3.31.4",
     "@tiptap/extension-paragraph": "^3.31.4",
     "@tiptap/extension-text": "^3.31.4",

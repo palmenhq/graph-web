@@ -5,6 +5,7 @@ import type { JSONContent } from '@tiptap/core'
 import Document from '@tiptap/extension-document'
 import Paragraph from '@tiptap/extension-paragraph'
 import Text from '@tiptap/extension-text'
+import Link from '@tiptap/extension-link'
 import Mention from '@tiptap/extension-mention'
 import { Placeholder } from '@tiptap/extensions'
 import type { SuggestionProps } from '@tiptap/suggestion'
@@ -59,6 +60,11 @@ const editor = useEditor({
     Document,
     Paragraph,
     Text,
+    Link.configure({
+      openOnClick: false,
+      autolink: true,
+      defaultProtocol: 'https',
+    }),
     Placeholder.configure({ placeholder: props.placeholder ?? '' }),
     Mention.configure({
       HTMLAttributes: { class: 'note-mention' },
@@ -169,6 +175,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .note-editor {
   position: relative;
+  word-break: break-word;
 }
 
 .note-editor :deep(.tiptap) {
@@ -179,6 +186,7 @@ onBeforeUnmount(() => {
   background: var(--p-form-field-background);
   color: var(--p-form-field-color);
   outline: none;
+  word-break: break-word;
 }
 
 .note-editor :deep(.tiptap:focus) {

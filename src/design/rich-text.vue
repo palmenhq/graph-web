@@ -32,6 +32,9 @@ const mentionLabel = (inline: JSONContent) =>
 
 const mentionLink = (inline: JSONContent) =>
   `/w/${workspaceId}/nodes/${inline.attrs?.id}`
+
+const getLinkAttrs = (inline: JSONContent) =>
+  inline.marks?.find((mark) => mark.type === 'link')?.attrs
 </script>
 
 <template>
@@ -47,6 +50,14 @@ const mentionLink = (inline: JSONContent) =>
           class="note-mention"
           >@{{ mentionLabel(inline) }}</RouterLink
         >
+        <a
+          v-else-if="inline.type === 'text' && getLinkAttrs(inline)?.href"
+          :href="getLinkAttrs(inline)?.href"
+          :target="getLinkAttrs(inline)?.target ?? '_blank'"
+          :rel="getLinkAttrs(inline)?.rel ?? 'noopener noreferrer'"
+          :class="getLinkAttrs(inline)?.class"
+          >{{ inline.text }}</a
+        >
         <template v-else-if="inline.type === 'text'">{{
           inline.text
         }}</template>
@@ -56,6 +67,10 @@ const mentionLink = (inline: JSONContent) =>
 </template>
 
 <style scoped>
+.rich-text {
+  word-break: break-word;
+}
+
 .rich-text p {
   margin: 0;
   min-height: 1lh;
