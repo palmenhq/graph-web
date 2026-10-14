@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 
-const STORAGE_KEY = 'graph-crm.session-token'
+const STORAGE_KEY = 'graph.session-token'
 
 const readToken = (): string | null => {
   try {
