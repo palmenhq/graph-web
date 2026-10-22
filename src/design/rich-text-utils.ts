@@ -29,6 +29,23 @@ export const serializeNoteBody = (doc?: JSONContent | null): string | null => {
   return JSON.stringify(doc)
 }
 
+// Plain text version of a note body, one line per block
+export const noteBodyToText = (doc: JSONContent): string => {
+  const inlineText = (content: JSONContent): string => {
+    if (content.type === 'text') {
+      return content.text ?? ''
+    }
+    if (content.type === 'mention') {
+      return `@${content.attrs?.label ?? content.attrs?.id ?? ''}`
+    }
+    if (content.type === 'hardBreak') {
+      return '\n'
+    }
+    return (content.content ?? []).map(inlineText).join('')
+  }
+  return (doc.content ?? []).map(inlineText).join('\n')
+}
+
 export const isEmptyNoteBody = (doc: JSONContent): boolean => {
   const hasContent = (content: JSONContent): boolean =>
     content.type === 'mention' ||

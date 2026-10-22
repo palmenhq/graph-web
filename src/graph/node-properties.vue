@@ -17,6 +17,7 @@ import {
 } from '../api/use-node-query.ts'
 import NodePropertyValue from './node-property-value.vue'
 import { isValidPropertyValue } from './property-value-validator.ts'
+import { propertyValueDisplay } from './property-value-display.ts'
 import RichTextEditor from '../design/rich-text-editor.vue'
 import { parseNoteBody, serializeNoteBody } from '../design/rich-text-utils.ts'
 import { type InputTypeHTMLAttribute } from '@vue/runtime-dom'
@@ -145,6 +146,32 @@ const saveValue = () => {
     return
   }
   setValueMutation.mutate({ propertyId, value })
+}
+
+// Copying a value, for handles this is the full profile URL rather than the displayed @handle
+const copiedPropertyId = ref<string | null>(null)
+let copiedTimeout: ReturnType<typeof setTimeout> | undefined
+
+const copyText = (property: PropertyValue): string | null => {
+  const display = propertyValueDisplay(property.valueType, property.value)
+  return display.kind === 'empty' ? null : display.copy
+}
+
+const copyValue = async (property: PropertyValue) => {
+  const text = copyText(property)
+  if (!text) {
+    return
+  }
+  try {
+    await navigator.clipboard.writeText(text)
+  } catch {
+    return
+  }
+  copiedPropertyId.value = property.propertyId
+  clearTimeout(copiedTimeout)
+  copiedTimeout = setTimeout(() => {
+    copiedPropertyId.value = null
+  }, 1500)
 }
 
 // Adding a new property
@@ -297,6 +324,23 @@ const inputType = (valueType: PropertyValueType): InputTypeHTMLAttribute => {
               :value-type="property.valueType"
               :value="property.value"
             />
+            <Button
+              v-if="copyText(property)"
+              type="button"
+              size="small"
+              text
+              rounded
+              severity="secondary"
+              :aria-label="`Copy ${property.propertyName}`"
+              :title="
+                copiedPropertyId === property.propertyId
+                  ? 'Copied'
+                  : `Copy ${property.propertyName}`
+              "
+              @click="copyValue(property)"
+            >
+              {{ copiedPropertyId === property.propertyId ? '✓' : '⧉' }}
+            </Button>
             <Button
               type="button"
               size="small"

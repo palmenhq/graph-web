@@ -2,107 +2,16 @@
 import { computed } from 'vue'
 import type { PropertyValueType } from '../api/use-node-query.ts'
 import RichText from '../design/rich-text.vue'
-import { isEmptyNoteBody, parseNoteBody } from '../design/rich-text-utils.ts'
+import { propertyValueDisplay } from './property-value-display.ts'
 
 const props = defineProps<{
   valueType: PropertyValueType
   value?: string | null
 }>()
 
-type Display =
-  | { kind: 'empty' }
-  | { kind: 'text'; label: string }
-  | { kind: 'link'; label: string; href: string; external: boolean }
-  | { kind: 'textarea'; value: string }
-
-const handlePattern = /^[A-Za-z0-9._]{1,30}$/
-
-// Accepts "handle", "@handle" or a profile URL ("instagram.com/handle", "https://www.tiktok.com/@handle")
-const parseHandle = (raw: string, domain: string): string | null => {
-  const urlMatch = raw.match(
-    new RegExp(`^(?:https?://)?(?:[a-z0-9-]+\\.)*${domain}/@?([^/?#]+)`, 'i'),
-  )
-  const handle = urlMatch ? urlMatch[1] : raw.replace(/^@/, '')
-  return handlePattern.test(handle) ? handle : null
-}
-
-const display = computed<Display>(() => {
-  const raw = props.value?.trim()
-  if (!raw) {
-    return { kind: 'empty' }
-  }
-
-  switch (props.valueType) {
-    case 'textarea': {
-      const doc = parseNoteBody(props.value)
-      if (!doc || isEmptyNoteBody(doc)) {
-        return { kind: 'empty' }
-      }
-      return { kind: 'textarea', value: props.value! }
-    }
-    case 'instagram': {
-      const handle = parseHandle(raw, 'instagram\\.com')
-      return handle
-        ? {
-            kind: 'link',
-            label: `@${handle}`,
-            href: `https://www.instagram.com/${handle}/`,
-            external: true,
-          }
-        : { kind: 'text', label: raw }
-    }
-    case 'tiktok': {
-      const handle = parseHandle(raw, 'tiktok\\.com')
-      return handle
-        ? {
-            kind: 'link',
-            label: `@${handle}`,
-            href: `https://www.tiktok.com/@${handle}`,
-            external: true,
-          }
-        : { kind: 'text', label: raw }
-    }
-    case 'email': {
-      const email = raw.replace(/^mailto:/i, '')
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-        ? {
-            kind: 'link',
-            label: email,
-            href: `mailto:${email}`,
-            external: false,
-          }
-        : { kind: 'text', label: raw }
-    }
-    case 'phone': {
-      const phone = raw.replace(/^tel:/i, '')
-      const dialable = phone.replace(/[^\d+]/g, '').replace(/(?!^)\+/g, '')
-      return dialable.replace('+', '').length >= 3
-        ? {
-            kind: 'link',
-            label: phone,
-            href: `tel:${dialable}`,
-            external: false,
-          }
-        : { kind: 'text', label: raw }
-    }
-    case 'text': {
-      return /^https?:\/\/\S+$/i.test(raw)
-        ? { kind: 'link', label: raw, href: raw, external: true }
-        : { kind: 'text', label: raw }
-    }
-    case 'link': {
-      return {
-        kind: 'link',
-        label: raw.replace(/^https?:\/\/(www)?/, ''),
-        href: raw,
-        external: true,
-      }
-    }
-    default:
-      props.valueType satisfies never
-      return { kind: 'text', label: raw }
-  }
-})
+const display = computed(() =>
+  propertyValueDisplay(props.valueType, props.value),
+)
 </script>
 
 <template>
