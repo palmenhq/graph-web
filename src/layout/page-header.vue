@@ -51,4 +51,15 @@ defineProps<{
   flex: 0 1 auto;
   margin-left: auto;
 }
+
+@media (max-width: 640px) {
+  .page-header {
+    padding-bottom: 1rem;
+    gap: 0.75rem;
+  }
+
+  .actions {
+    gap: 0.5rem;
+  }
+}
 </style>

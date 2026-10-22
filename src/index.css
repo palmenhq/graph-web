@@ -51,3 +51,30 @@ a.note-mention:hover {
 input {
   width: 100%;
 }
+
+/* Responsive openvue tokens */
+:root {
+  --app-panel-background: var(--p-content-background);
+  --app-panel-border-color: var(--p-content-border-color);
+  --app-panel-border-radius: var(--p-content-border-radius);
+  --app-panel-header-padding: 1.125rem;
+  --app-panel-padding: 0 1.125rem 1.125rem;
+  --app-card-padding: 1.25rem;
+  --app-card-title-font-size: 1.25rem;
+  --app-overlay-padding: 1.25rem;
+  --app-overlay-header-padding: 1.25rem;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --app-panel-background: transparent;
+    --app-panel-border-color: transparent;
+    --app-panel-border-radius: 0;
+    --app-panel-header-padding: 0 0 0.75rem;
+    --app-panel-padding: 0;
+    --app-card-padding: 0.75rem;
+    --app-card-title-font-size: 1rem;
+    --app-overlay-padding: 1rem;
+    --app-overlay-header-padding: 0.75rem 1rem;
+  }
+}

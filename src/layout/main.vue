@@ -21,6 +21,12 @@
   justify-self: center;
 }
 
+@media (max-width: 640px) {
+  .main {
+    padding: 0.75rem;
+  }
+}
+
 .logo {
   font-size: 1.25rem;
   margin: 0;

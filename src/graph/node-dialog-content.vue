@@ -102,16 +102,7 @@ const deleteNode = () => {
 </script>
 
 <template>
-  <Dialog
-    v-model:visible="visible"
-    modal
-    dismissable-mask
-    style="
-      width: 40rem;
-      max-width: calc(100vw - 2rem);
-      max-height: calc(100vh - 2rem);
-    "
-  >
+  <Dialog v-model:visible="visible" modal dismissable-mask class="node-dialog">
     <template #header>
       <NodeTitleEditor v-if="node" :node="node" />
     </template>
@@ -135,6 +126,7 @@ const deleteNode = () => {
           <Button
             size="small"
             :disabled="edgeTypesQuery.isPending"
+            :outlined="newEdgeVisible"
             @click="newEdgeVisible = !newEdgeVisible"
           >
             {{ newEdgeVisible ? 'Cancel' : 'Add Edge' }}
@@ -285,5 +277,38 @@ const deleteNode = () => {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+@media (max-width: 640px) {
+  .sub-form {
+    padding: 0;
+    margin: 0.5rem 0 1rem;
+    border: none;
+    border-radius: 0;
+  }
+
+  .edge-list {
+    gap: 0.5rem;
+  }
+}
+</style>
+
+<!-- Not scoped: the dialog is teleported to the body -->
+<style>
+body .node-dialog {
+  width: 40rem;
+  max-width: calc(100vw - 2rem);
+  max-height: calc(100vh - 2rem);
+}
+
+@media (max-width: 640px) {
+  body .node-dialog {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    border: none;
+    border-radius: 0;
+  }
 }
 </style>

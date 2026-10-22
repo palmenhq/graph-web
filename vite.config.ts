@@ -1,13 +1,14 @@
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 
-// https://vite.dev/config/
+const API_BASE = process.env.API_BASE || 'http://localhost:8080'
+
 export default defineConfig({
   plugins: [vue()],
   server: {
     proxy: {
-      '/api': { target: 'http://localhost:8080', changeOrigin: true },
-      '/auth': { target: 'http://localhost:8080', changeOrigin: true },
+      '/api': { target: API_BASE, changeOrigin: true },
+      '/auth': { target: API_BASE, changeOrigin: true },
     },
   },
 })

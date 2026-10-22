@@ -276,6 +276,7 @@ const submitNewProperty = () => {
                 type="button"
                 size="small"
                 severity="secondary"
+                outlined
                 text
                 :disabled="createPropertyMutation.isPending"
                 @click="cancelAdding"

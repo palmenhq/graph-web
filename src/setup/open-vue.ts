@@ -21,7 +21,6 @@ import {
   Toolbar,
 } from 'openvue'
 
-// Small inputs keep a 16px font size so mobile browsers don't zoom on focus
 const Preset = definePreset(Aura, {
   semantic: {
     formField: {
@@ -29,11 +28,75 @@ const Preset = definePreset(Aura, {
         fontSize: '1rem',
       },
     },
+    overlay: {
+      modal: {
+        padding: 'var(--app-overlay-padding)',
+      },
+    },
+  },
+  components: {
+    panel: {
+      root: {
+        background: 'var(--app-panel-background)',
+        borderColor: 'var(--app-panel-border-color)',
+        borderRadius: 'var(--app-panel-border-radius)',
+      },
+      header: {
+        padding: 'var(--app-panel-header-padding)',
+      },
+      content: {
+        padding: 'var(--app-panel-padding)',
+      },
+      footer: {
+        padding: 'var(--app-panel-padding)',
+      },
+      css: `
+        @media (max-width: 640px) {
+          .p-panel + .p-panel {
+            border-top: 1px solid var(--p-content-border-color);
+            padding-top: 1rem;
+          }
+
+          .p-panel-header {
+            gap: 0.75rem;
+          }
+
+          .p-panel-title {
+            font-size: 1.125rem;
+          }
+        }
+      `,
+    },
+    card: {
+      body: {
+        padding: 'var(--app-card-padding)',
+      },
+      title: {
+        fontSize: 'var(--app-card-title-font-size)',
+      },
+    },
+    dialog: {
+      header: {
+        padding: 'var(--app-overlay-header-padding)',
+      },
+    },
+    drawer: {
+      header: {
+        padding: 'var(--app-overlay-header-padding)',
+      },
+      css: `
+        .p-drawer {
+          max-width: 100vw;
+        }
+      `,
+    },
   },
 })
 
 export const setupOpenVue = (app: App) => {
-  app.use(OpenVue, { theme: { preset: Preset } } satisfies PrimeVueConfiguration)
+  app.use(OpenVue, {
+    theme: { preset: Preset },
+  } satisfies PrimeVueConfiguration)
 
   app.component('Button', Button)
   app.component('AutoComplete', AutoComplete)

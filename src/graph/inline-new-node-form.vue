@@ -154,6 +154,13 @@ const submit = () => {
   border-radius: var(--p-content-border-radius);
 }
 
+@media (max-width: 640px) {
+  .node-form {
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+}
+
 .node-form h4 {
   align-self: flex-start;
 }

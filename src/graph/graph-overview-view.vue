@@ -323,6 +323,13 @@ const splitButtonModel = computed(() => {
   gap: 1rem;
 }
 
+@media (max-width: 640px) {
+  .node-grid {
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+    gap: 0.5rem;
+  }
+}
+
 .node-grid-stale {
   opacity: 0.6;
 }
