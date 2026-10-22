@@ -2,6 +2,7 @@
 import { computed, reactive, ref } from 'vue'
 import type { JSONContent } from '@tiptap/core'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import { isAxiosError } from 'axios'
 import { apiClient, url } from '../api'
 import Spinner from '../design/spinner.vue'
 import type { Node } from '../api/use-nodes-query.ts'
@@ -15,8 +16,10 @@ import {
   useNodeQuery,
 } from '../api/use-node-query.ts'
 import NodePropertyValue from './node-property-value.vue'
+import { isValidPropertyValue } from './property-value-validator.ts'
 import RichTextEditor from '../design/rich-text-editor.vue'
 import { parseNoteBody, serializeNoteBody } from '../design/rich-text-utils.ts'
+import { type InputTypeHTMLAttribute } from '@vue/runtime-dom'
 
 const props = defineProps<{
   node: Pick<Node, 'id' | 'nodeTypeId'>
@@ -65,6 +68,44 @@ const setValueMutation = reactive(
   }),
 )
 
+const editingProperty = computed(() =>
+  properties.value.find((p) => p.propertyId === editingPropertyId.value),
+)
+
+const valueTypeLabel = (valueType: PropertyValueType) =>
+  propertyValueTypes.find((t) => t.value === valueType)?.label ?? valueType
+
+// An empty value clears the property, which is always allowed
+const draftIsValid = computed(() => {
+  const property = editingProperty.value
+  if (!property || property.valueType === 'textarea') {
+    return true
+  }
+  const value = draftValue.value.trim()
+  return !value || isValidPropertyValue(property.valueType, value)
+})
+
+const valueErrorMessage = computed(() => {
+  const property = editingProperty.value
+  if (!property) {
+    return null
+  }
+  const error = setValueMutation.error
+  const rejectedByServer =
+    setValueMutation.isError &&
+    isAxiosError(error) &&
+    error.response?.data?.code === 'invalid_property_value'
+  return !draftIsValid.value || rejectedByServer
+    ? `Not a valid ${valueTypeLabel(property.valueType).toLowerCase()}`
+    : null
+})
+
+const onDraftInput = () => {
+  if (setValueMutation.isError) {
+    setValueMutation.reset()
+  }
+}
+
 const startEditing = (property: PropertyValue) => {
   setValueMutation.reset()
   if (property.valueType === 'textarea') {
@@ -98,6 +139,9 @@ const saveValue = () => {
 
   if ((current.value ?? null) === value) {
     editingPropertyId.value = null
+    return
+  }
+  if (!draftIsValid.value) {
     return
   }
   setValueMutation.mutate({ propertyId, value })
@@ -154,6 +198,25 @@ const submitNewProperty = () => {
     valueType: newPropertyValueType.value,
   })
 }
+
+const inputType = (valueType: PropertyValueType): InputTypeHTMLAttribute => {
+  switch (valueType) {
+    case 'link':
+      return 'url'
+    case 'email':
+      return 'email'
+    case 'phone':
+      return 'tel'
+    case 'tiktok':
+    case 'instagram':
+    case 'textarea':
+    case 'text':
+      return 'text'
+    default:
+      valueType satisfies never
+      return 'text'
+  }
+}
 </script>
 
 <template>
@@ -189,21 +252,30 @@ const submitNewProperty = () => {
               class="property-input"
               @keydown.esc.stop.prevent="cancelEditing"
             />
-            <InputText
-              v-else
-              v-model="draftValue"
-              autofocus
-              size="small"
-              class="property-input"
-              :aria-label="property.propertyName"
-              :disabled="setValueMutation.isPending"
-              @keydown.esc.stop.prevent="cancelEditing"
-            />
+            <div v-else class="property-field">
+              <InputText
+                v-model="draftValue"
+                autofocus
+                size="small"
+                class="property-input"
+                :aria-label="property.propertyName"
+                :aria-invalid="!!valueErrorMessage"
+                :invalid="!!valueErrorMessage"
+                :disabled="setValueMutation.isPending"
+                :type="inputType(property.valueType)"
+                @update:model-value="onDraftInput"
+                @keydown.esc.stop.prevent="cancelEditing"
+              />
+              <small v-if="valueErrorMessage" class="property-hint">
+                {{ valueErrorMessage }}
+              </small>
+            </div>
             <div class="property-actions">
               <Button
                 type="submit"
                 size="small"
                 :loading="setValueMutation.isPending"
+                :disabled="!draftIsValid"
               >
                 Save
               </Button>
@@ -299,7 +371,7 @@ const submitNewProperty = () => {
         + Add a property
       </Button>
 
-      <div v-if="setValueMutation.isError" class="error">
+      <div v-if="setValueMutation.isError && !valueErrorMessage" class="error">
         error saving property
       </div>
       <div v-if="createPropertyMutation.isError" class="error">
@@ -365,6 +437,19 @@ const submitNewProperty = () => {
 .property-input {
   flex: 1;
   min-width: 0;
+}
+
+.property-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.property-hint {
+  color: var(--p-red-500);
+  font-size: 0.75rem;
 }
 
 .property-type {

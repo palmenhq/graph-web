@@ -85,10 +85,22 @@ const display = computed<Display>(() => {
           }
         : { kind: 'text', label: raw }
     }
-    default:
+    case 'text': {
       return /^https?:\/\/\S+$/i.test(raw)
         ? { kind: 'link', label: raw, href: raw, external: true }
         : { kind: 'text', label: raw }
+    }
+    case 'link': {
+      return {
+        kind: 'link',
+        label: raw.replace(/^https?:\/\/(www)?/, ''),
+        href: raw,
+        external: true,
+      }
+    }
+    default:
+      props.valueType satisfies never
+      return { kind: 'text', label: raw }
   }
 })
 </script>
@@ -100,7 +112,6 @@ const display = computed<Display>(() => {
   <a
     v-else-if="display.kind === 'link'"
     class="property-value link"
-    target="_blank"
     :href="display.href"
     :title="display.href"
     v-bind="
