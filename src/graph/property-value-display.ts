@@ -107,7 +107,7 @@ export const propertyValueDisplay = (
     case 'link': {
       return {
         kind: 'link',
-        label: raw.replace(/^https?:\/\/(www)?/, ''),
+        label: raw.replace(/^https?:\/\/(www\.)?/, ''),
         href: raw,
         external: true,
         copy: raw,
