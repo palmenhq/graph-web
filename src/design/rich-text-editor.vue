@@ -31,6 +31,21 @@ const suggestionRect = ref<DOMRect | null>(null)
 const suggestionOpen = ref(false)
 let suggestionCommand: ((item: MentionItem) => void) | null = null
 let latestQuery = ''
+let getSuggestionRect: (() => DOMRect | null) | null = null
+
+const repositionSuggestion = () => {
+  suggestionRect.value = getSuggestionRect?.() ?? null
+}
+
+const startTrackingPosition = () => {
+  window.addEventListener('scroll', repositionSuggestion, true)
+  window.addEventListener('resize', repositionSuggestion)
+}
+
+const stopTrackingPosition = () => {
+  window.removeEventListener('scroll', repositionSuggestion, true)
+  window.removeEventListener('resize', repositionSuggestion)
+}
 
 const fetchNodeSuggestions = useFetchNodeSuggestions()
 
@@ -39,7 +54,8 @@ const updateSuggestion = (p: SuggestionProps<MentionItem, MentionItem>) => {
     return
   }
   suggestionItems.value = p.items
-  suggestionRect.value = p.clientRect?.() ?? null
+  getSuggestionRect = p.clientRect ?? null
+  repositionSuggestion()
   suggestionCommand = p.command
   if (suggestionIndex.value >= p.items.length) {
     suggestionIndex.value = 0
@@ -85,6 +101,7 @@ const editor = useEditor({
           onStart: (p) => {
             suggestionIndex.value = 0
             suggestionOpen.value = true
+            startTrackingPosition()
             updateSuggestion(p)
           },
           onUpdate: updateSuggestion,
@@ -116,6 +133,8 @@ const editor = useEditor({
             suggestionOpen.value = false
             suggestionItems.value = []
             suggestionCommand = null
+            getSuggestionRect = null
+            stopTrackingPosition()
           },
         }),
       },
@@ -137,6 +156,7 @@ const focus = () => {
 defineExpose({ clear, focus })
 
 onBeforeUnmount(() => {
+  stopTrackingPosition()
   editor.value?.destroy()
 })
 </script>
@@ -145,30 +165,32 @@ onBeforeUnmount(() => {
   <div class="note-editor">
     <EditorContent :editor="editor" />
 
-    <ul
-      v-if="suggestionOpen && suggestionRect"
-      class="note-suggestions"
-      role="listbox"
-      :style="{
-        top: `${suggestionRect.bottom + 4}px`,
-        left: `${suggestionRect.left}px`,
-      }"
-    >
-      <li v-if="suggestionItems.length === 0" class="note-suggestion-empty">
-        <em>No matching items</em>
-      </li>
-      <li
-        v-for="(item, index) in suggestionItems"
-        :key="item.id"
-        role="option"
-        :aria-selected="index === suggestionIndex"
-        :class="{ 'is-selected': index === suggestionIndex }"
-        @mousedown.prevent="selectSuggestion(index)"
-        @mouseenter="suggestionIndex = index"
+    <Teleport to="body">
+      <ul
+        v-if="suggestionOpen && suggestionRect"
+        class="note-suggestions"
+        role="listbox"
+        :style="{
+          top: `${suggestionRect.bottom + 4}px`,
+          left: `${suggestionRect.left}px`,
+        }"
       >
-        {{ item.label }}
-      </li>
-    </ul>
+        <li v-if="suggestionItems.length === 0" class="note-suggestion-empty">
+          <em>No matching items</em>
+        </li>
+        <li
+          v-for="(item, index) in suggestionItems"
+          :key="item.id"
+          role="option"
+          :aria-selected="index === suggestionIndex"
+          :class="{ 'is-selected': index === suggestionIndex }"
+          @mousedown.prevent="selectSuggestion(index)"
+          @mouseenter="suggestionIndex = index"
+        >
+          {{ item.label }}
+        </li>
+      </ul>
+    </Teleport>
   </div>
 </template>
 
