@@ -67,7 +67,7 @@ const submit = () => {
     <NoteEditor
       ref="editorRef"
       v-model="noteBody"
-      placeholder="Write a note, use @ to mention a node"
+      placeholder="Write a note, use @ to mention..."
     />
 
     <div v-if="createNoteMutation.isError" class="note-error">

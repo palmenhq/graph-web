@@ -98,7 +98,7 @@ const submit = () => {
 <template>
   <!-- Rendered inside the new edge form, so no nested <form> element -->
   <div class="node-form" @keydown.enter.prevent="submit">
-    <h4>New Node</h4>
+    <h4>New {{ nodeType ? nodeType.title : 'Item' }}</h4>
 
     <FormGroup>
       <IftaLabel>
@@ -117,7 +117,7 @@ const submit = () => {
           data-key="id"
           fluid
         />
-        <label for="inline-node-type">Node type</label>
+        <label for="inline-node-type">Type</label>
       </IftaLabel>
     </FormGroup>
 
@@ -136,7 +136,7 @@ const submit = () => {
       >
         <Spinner v-if="createNodeMutation.isPending" />
 
-        Create Node
+        Create {{ nodeType ? nodeType.title : 'Item' }}
       </Button>
     </div>
   </div>

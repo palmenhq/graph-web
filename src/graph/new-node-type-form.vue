@@ -35,7 +35,7 @@ const title = ref('')
 </script>
 
 <template>
-  <h2 style="padding-bottom: 1rem">New Node Type</h2>
+  <h2 style="padding-bottom: 1rem">New Type</h2>
 
   <FormDrawer @submit.prevent="createNodeTypeMutation.mutate({ title: title })">
     <FormGroup>

@@ -11,10 +11,7 @@ import {
   type NodeType,
   useNodeTypesQuery,
 } from '../api/use-node-types-query.ts'
-import {
-  type Node,
-  useNodeSearchQuery,
-} from '../api/use-nodes-query.ts'
+import { type Node, useNodeSearchQuery } from '../api/use-nodes-query.ts'
 import NewNodeTypeForm from './new-node-type-form.vue'
 import NewNodeForm from './new-node-form.vue'
 import NodeDialogContent from './node-dialog-content.vue'
@@ -75,7 +72,7 @@ const openNewNodeTypeDrawer = () => {
 }
 
 const splitButtonLabel = computed(() =>
-  nodeTypes.value[0] ? `New ${nodeTypes.value[0].title}` : 'New Node Type',
+  nodeTypes.value[0] ? `New ${nodeTypes.value[0].title}` : 'New Type',
 )
 
 const onSplitButtonClick = () => {
@@ -102,7 +99,7 @@ const splitButtonModel = computed(() => {
     ...(others.length > 0 ? [{ key: 'nntk', separator: true }] : []),
     {
       key: 'nnt',
-      label: 'New Node Type',
+      label: 'New Type',
       command: openNewNodeTypeDrawer,
     },
   ]
@@ -146,8 +143,8 @@ const splitButtonModel = computed(() => {
             <InputText
               v-model="searchInput"
               type="search"
-              placeholder="Search nodes"
-              aria-label="Search nodes"
+              placeholder="Search"
+              aria-label="Search"
               class="search-input"
               @keydown.esc="clearSearch"
             />
@@ -180,7 +177,7 @@ const splitButtonModel = computed(() => {
           <div v-else-if="searchQuery.isError">error</div>
 
           <div v-else-if="searchedNodes.length === 0">
-            <em>No nodes found</em>
+            <em>No results found</em>
           </div>
 
           <div
@@ -223,13 +220,12 @@ const splitButtonModel = computed(() => {
         <Spinner v-else-if="nodeTypesQuery.isPending" />
 
         <div v-else>
-          <div style="padding-bottom: 1rem"><em>No node types found</em></div>
+          <div style="padding-bottom: 1rem"><em>No types found</em></div>
           <div>
-            <Button @click="openNewNodeTypeDrawer">Create Node Type</Button>
+            <Button @click="openNewNodeTypeDrawer">Create Type</Button>
           </div>
         </div>
       </Panel>
-
     </div>
 
     <NodeDialogContent

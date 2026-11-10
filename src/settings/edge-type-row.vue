@@ -85,7 +85,7 @@ const save = () => {
 const remove = () => {
   if (
     !window.confirm(
-      `Delete edge type "${props.edgeType.relationshipTitle}"? This cannot be undone.`,
+      `Delete connection type "${props.edgeType.relationshipTitle}"? This cannot be undone.`,
     )
   ) {
     return

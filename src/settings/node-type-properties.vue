@@ -38,7 +38,7 @@ const deletePropertyMutation = reactive(
 const remove = (property: Property) => {
   if (
     !window.confirm(
-      `Delete property "${property.name}" from "${props.nodeType.title}"? Its values will no longer be shown on any node.`,
+      `Delete property "${property.name}" from "${props.nodeType.title}"? Its values will no longer be shown on any ${props.nodeType.title.toLowerCase()}.`,
     )
   ) {
     return

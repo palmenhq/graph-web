@@ -51,7 +51,7 @@ const logOut = async () => {
     </PageHeader>
 
     <div class="settings-layout">
-      <Panel header="Node Types">
+      <Panel header="Types">
         <Spinner v-if="nodeTypesQuery.isPending" />
         <div v-if="nodeTypesQuery.isError">error</div>
         <DataView
@@ -67,12 +67,12 @@ const logOut = async () => {
             />
           </template>
           <template #empty>
-            <em>No node types</em>
+            <em>No types</em>
           </template>
         </DataView>
       </Panel>
 
-      <Panel header="Edge Types">
+      <Panel header="Connection Types">
         <Spinner v-if="edgeTypesQuery.isPending" />
         <div v-if="edgeTypesQuery.isError">error</div>
         <DataView
@@ -88,7 +88,7 @@ const logOut = async () => {
             />
           </template>
           <template #empty>
-            <em>No edge types</em>
+            <em>No connection types</em>
           </template>
         </DataView>
       </Panel>

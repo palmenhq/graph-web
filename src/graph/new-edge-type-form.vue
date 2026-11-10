@@ -75,9 +75,8 @@ const submit = () => {
 </script>
 
 <template>
-  <!-- Rendered inside the new edge form, so no nested <form> element -->
   <div class="edge-type-form" @keydown.enter.prevent="submit">
-    <h4>New Edge Type</h4>
+    <h4>New Connection Type</h4>
 
     <FormGroup>
       <IftaLabel>
@@ -120,7 +119,7 @@ const submit = () => {
       >
         <Spinner v-if="createEdgeTypeMutation.isPending" />
 
-        Create Edge Type
+        Create Connection Type
       </Button>
     </div>
   </div>

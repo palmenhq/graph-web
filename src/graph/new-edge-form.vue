@@ -265,7 +265,7 @@ const submit = () => {
 </script>
 
 <template>
-  <h3 style="padding-bottom: 1rem">New Edge</h3>
+  <h3 style="padding-bottom: 1rem">New Connection</h3>
 
   <FormDrawer @submit.prevent="submit">
     <FormGroup>
@@ -325,8 +325,8 @@ const submit = () => {
           v-model="targetNode"
           :suggestions="nodeSuggestions"
           option-label="title"
-          placeholder="other node"
-          aria-label="Target node"
+          placeholder="other"
+          aria-label="Target"
           force-selection
           complete-on-focus
           dropdown

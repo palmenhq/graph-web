@@ -63,7 +63,7 @@ const save = () => {
       autofocus
       size="small"
       class="title-input"
-      aria-label="Node title"
+      aria-label="Title"
       :disabled="updateNodeMutation.isPending"
       @keydown.esc.stop.prevent="cancel"
     />

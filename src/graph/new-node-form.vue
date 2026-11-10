@@ -55,7 +55,7 @@ const title = ref('')
     <Button type="submit" :loading="createNodeMutation.isPending">
       <Spinner v-if="createNodeMutation.isPending" />
 
-      Create
+      Create {{ nodeType.title }}
     </Button>
   </FormDrawer>
 </template>

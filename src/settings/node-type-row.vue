@@ -72,7 +72,7 @@ const save = () => {
 const remove = () => {
   if (
     !window.confirm(
-      `Delete node type "${props.nodeType.title}"? This cannot be undone.`,
+      `Delete type "${props.nodeType.title}"? This cannot be undone.`,
     )
   ) {
     return
@@ -102,7 +102,7 @@ const remove = () => {
         autofocus
         size="small"
         class="row-input"
-        aria-label="Node type title"
+        aria-label="Type title"
         :disabled="updateNodeTypeMutation.isPending"
       />
     </template>

@@ -72,11 +72,19 @@ const deleteEdge = (edge: Edge) => {
     ? edge.relationshipTitle
     : (edge.reverseRelationshipTitle ?? edge.relationshipTitle)
   if (
-    window.confirm(`Delete edge "${relationshipTitle ?? '?'} ${otherTitle}"?`)
+    window.confirm(
+      `Delete connection "${relationshipTitle ?? '?'} ${otherTitle}"?`,
+    )
   ) {
     deleteEdgeMutation.mutate(edge.id)
   }
 }
+
+const nodeTypeTitle = computed(() =>
+  node.value && nodeTypesQuery.data?.items
+    ? getNodeTypeTitle(nodeTypesQuery.data.items, node.value.nodeTypeId)
+    : null,
+)
 
 const deleteNodeMutation = reactive(
   useMutation({
@@ -96,7 +104,10 @@ const deleteNodeMutation = reactive(
 
 const deleteNode = () => {
   const title = node.value?.title ?? props.nodeId
-  if (window.confirm(`Delete node "${title}" and all its edges?`)) {
+  const typeLabel = nodeTypeTitle.value
+    ? nodeTypeTitle.value.toLowerCase()
+    : 'item'
+  if (window.confirm(`Delete ${typeLabel} "${title}" and all its connections?`)) {
     deleteNodeMutation.mutate(props.nodeId)
   }
 }
@@ -112,7 +123,7 @@ const deleteNode = () => {
 
     <div v-else-if="nodeQuery.isError">error</div>
 
-    <div v-else-if="!node"><em>Node not found</em></div>
+    <div v-else-if="!node"><em>Item not found</em></div>
 
     <template v-else>
       <div v-if="nodeTypesQuery.data?.items" class="section-node-type">
@@ -123,14 +134,14 @@ const deleteNode = () => {
 
       <section class="section">
         <div class="section-header">
-          <h3>Edges</h3>
+          <h3>Connections</h3>
           <Button
             size="small"
             :disabled="edgeTypesQuery.isPending"
             :outlined="newEdgeVisible"
             @click="newEdgeVisible = !newEdgeVisible"
           >
-            {{ newEdgeVisible ? 'Cancel' : 'Add Edge' }}
+            {{ newEdgeVisible ? 'Cancel' : 'Add Connection' }}
           </Button>
         </div>
 
@@ -146,7 +157,7 @@ const deleteNode = () => {
 
         <div v-else-if="edgesQuery.isError">error</div>
 
-        <div v-else-if="edges.length === 0"><em>No edges</em></div>
+        <div v-else-if="edges.length === 0"><em>No connections</em></div>
 
         <ul v-else class="edge-list">
           <li v-for="edge in edges" :key="edge.id" class="edge-row">
@@ -185,7 +196,7 @@ const deleteNode = () => {
           </li>
         </ul>
 
-        <div v-if="deleteEdgeMutation.isError">error deleting edge</div>
+        <div v-if="deleteEdgeMutation.isError">error deleting connection</div>
       </section>
 
       <section class="section">
@@ -217,7 +228,9 @@ const deleteNode = () => {
       </section>
 
       <section class="danger-zone">
-        <div v-if="deleteNodeMutation.isError">error deleting node</div>
+        <div v-if="deleteNodeMutation.isError">
+          error deleting {{ (nodeTypeTitle ?? 'item').toLowerCase() }}
+        </div>
         <Button
           severity="danger"
           outlined
@@ -225,7 +238,7 @@ const deleteNode = () => {
           @click="deleteNode"
           size="small"
         >
-          Delete Node
+          Delete {{ nodeTypeTitle ?? 'Item' }}
         </Button>
       </section>
     </template>

@@ -155,7 +155,7 @@ onBeforeUnmount(() => {
       }"
     >
       <li v-if="suggestionItems.length === 0" class="note-suggestion-empty">
-        <em>No matching nodes</em>
+        <em>No matching items</em>
       </li>
       <li
         v-for="(item, index) in suggestionItems"
