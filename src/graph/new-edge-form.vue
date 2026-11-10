@@ -15,6 +15,7 @@ import {
 import Spinner from '../design/spinner.vue'
 import NewEdgeTypeForm, { type CreatedEdgeType } from './new-edge-type-form.vue'
 import InlineNewNodeForm from './inline-new-node-form.vue'
+import { getNodeTypeTitle } from './helpers.ts'
 
 const props = defineProps<{
   node: Pick<Node, 'id' | 'title' | 'nodeTypeId'>
@@ -377,7 +378,18 @@ const submit = () => {
             <span v-if="isCreateOption(option)" class="create-node-option">
               {{ option.title }}
             </span>
-            <span v-else>{{ option.title }}</span>
+            <template v-else>
+              <span>{{ option.title }}</span>
+
+              <span
+                v-if="getNodeTypeTitle(nodeTypes, option.nodeTypeId)"
+                class="option-node-type"
+              >
+                {{
+                  ' (' + getNodeTypeTitle(nodeTypes, option.nodeTypeId) + ')'
+                }}
+              </span>
+            </template>
           </template>
         </AutoComplete>
       </div>
@@ -436,6 +448,12 @@ const submit = () => {
 
 .create-node-option {
   font-style: italic;
+}
+
+.option-node-type {
+  color: var(--p-text-muted-color);
+  padding-left: 0.75ch;
+  font-size: 0.8rem;
 }
 
 @media (max-width: 640px) {
