@@ -14,12 +14,10 @@ import {
 import {
   type Node,
   useNodeSearchQuery,
-  useNodesQuery,
 } from '../api/use-nodes-query.ts'
 import NewNodeTypeForm from './new-node-type-form.vue'
 import NewNodeForm from './new-node-form.vue'
 import NodeDialogContent from './node-dialog-content.vue'
-import NotesPanel from '../notes/notes-panel.vue'
 import { flattenPages } from '../api/api-list.ts'
 import { getNodeTypeTitle } from './helpers.ts'
 
@@ -28,10 +26,6 @@ const workspaceQuery = reactive(useCurrentWorkspaceQuery())
 const nodeTypesQuery = reactive(useNodeTypesQuery())
 
 const nodeTypes = computed<NodeType[]>(() => nodeTypesQuery.data?.items ?? [])
-
-const nodesQuery = reactive(useNodesQuery())
-
-const nodes = computed<Node[]>(() => flattenPages(nodesQuery.data))
 
 const searchInput = ref('')
 const search = ref('')
@@ -236,7 +230,6 @@ const splitButtonModel = computed(() => {
         </div>
       </Panel>
 
-      <NotesPanel class="overview-notes" :nodes="nodes" />
     </div>
 
     <NodeDialogContent
@@ -272,15 +265,9 @@ const splitButtonModel = computed(() => {
 <style scoped>
 .overview-layout {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
   align-items: start;
-}
-
-@media (max-width: 960px) {
-  .overview-layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 .search-field {

@@ -13,6 +13,7 @@ import NodeProperties from './node-properties.vue'
 import { useWorkspaceId } from '../api/use-current-workspace-query.ts'
 import { type Note, useNodeNotesQuery } from '../api/use-notes-query.ts'
 import NoteBody from '../notes/note-body.vue'
+import NewNoteForm from '../notes/new-note-form.vue'
 import { getNodeTypeTitle } from './helpers.ts'
 import { useNodeTypesQuery } from '../api/use-node-types-query.ts'
 import { useNodeQuery } from '../api/use-node-query.ts'
@@ -192,17 +193,25 @@ const deleteNode = () => {
           <h3>Notes</h3>
         </div>
 
+        <div class="section">
+          <NewNoteForm :node-id="node.id" />
+        </div>
+
         <Spinner v-if="notesQuery.isPending" />
 
         <div v-else-if="notesQuery.isError">error</div>
 
         <div v-else-if="notes.length === 0">
-          <em>No notes mention this node</em>
+          <em>No notes yet</em>
         </div>
 
         <ul v-else class="note-list">
           <li v-for="note in notes" :key="note.id">
-            <NoteBody :body="note.body" :created-at="note.createdAt" />
+            <NoteBody
+              :body="note.body"
+              :created-at="note.createdAt"
+              :node="note.node?.id !== node.id ? note.node : null"
+            />
           </li>
         </ul>
       </section>

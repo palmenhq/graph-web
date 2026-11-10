@@ -3,11 +3,16 @@ import { computed, onBeforeUnmount, ref } from 'vue'
 import type { JSONContent } from '@tiptap/core'
 import { format, formatDistance, isValid, parseISO } from 'date-fns'
 import RichText from '../design/rich-text.vue'
+import type { NoteNode } from '../api/use-notes-query.ts'
+import { useWorkspaceId } from '../api/use-current-workspace-query.ts'
 
 const props = defineProps<{
   body: JSONContent | string
   createdAt?: string
+  node?: NoteNode | null
 }>()
+
+const workspaceId = useWorkspaceId()
 
 // Refresh the relative timestamp every minute
 const now = ref(new Date())
@@ -34,6 +39,12 @@ const createdAtRelative = computed(() =>
 <template>
   <Card class="card">
     <template #content>
+      <div v-if="node" class="note-origin">
+        Note on
+        <RouterLink :to="`/w/${workspaceId}/nodes/${node.id}`">{{
+          node.title
+        }}</RouterLink>
+      </div>
       <RichText :content="body" />
       <time
         v-if="createdAtDate"
@@ -50,6 +61,12 @@ const createdAtRelative = computed(() =>
 <style scoped>
 .card {
   border: 1px solid var(--p-content-border-color);
+}
+
+.note-origin {
+  padding-bottom: 0.5rem;
+  color: var(--p-text-muted-color);
+  font-size: 0.875rem;
 }
 
 .note-created-at {
