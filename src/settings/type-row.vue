@@ -76,8 +76,8 @@ const emit = defineEmits<{
 .type-row {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  padding: 0.5rem 0;
+  gap: 0.5rem;
+  padding: 0.75rem 0;
 
   &:not(:last-child) {
     border-bottom: 1px solid var(--p-content-border-color);

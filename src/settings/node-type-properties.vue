@@ -7,6 +7,7 @@ import type { NodeType } from '../api/use-node-types-query.ts'
 import { useNodeTypePropertiesQuery } from '../api/use-node-types-query.ts'
 import { useWorkspaceId } from '../api/use-current-workspace-query.ts'
 import { type Property, propertyValueTypes } from '../api/use-node-query.ts'
+import TypeDetail from './type-detail.vue'
 
 const props = defineProps<{
   nodeType: NodeType
@@ -48,7 +49,7 @@ const remove = (property: Property) => {
 </script>
 
 <template>
-  <div class="properties">
+  <TypeDetail label="Properties">
     <Spinner v-if="propertiesQuery.isPending" />
     <div v-else-if="propertiesQuery.isError" class="error">
       error loading properties
@@ -70,9 +71,11 @@ const remove = (property: Property) => {
           <Button
             type="button"
             size="small"
-            severity="danger"
+            severity="secondary"
             text
+            rounded
             :aria-label="`Delete property ${property.name}`"
+            :title="`Delete property ${property.name}`"
             :loading="
               deletePropertyMutation.isPending &&
               deletePropertyMutation.variables?.propertyId === property.id
@@ -80,33 +83,27 @@ const remove = (property: Property) => {
             :disabled="deletePropertyMutation.isPending"
             @click="remove(property)"
           >
-            Delete
+            ✕
           </Button>
         </li>
       </ul>
-      <em v-else class="empty">No properties</em>
+      <span v-else class="empty">None</span>
 
       <span v-if="deletePropertyMutation.isError" class="error">
         error deleting property
       </span>
     </template>
-  </div>
+  </TypeDetail>
 </template>
 
 <style scoped>
-.properties {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  padding-left: 1rem;
-}
-
 .property-list {
   display: flex;
   flex-direction: column;
   list-style: none;
   margin: 0;
   padding: 0;
+  max-width: 36rem;
 }
 
 .property-row {

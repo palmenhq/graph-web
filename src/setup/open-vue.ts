@@ -14,6 +14,7 @@ import {
   InputGroupAddon,
   InputText,
   Menubar,
+  MultiSelect,
   Panel,
   ProgressSpinner,
   Select,
@@ -109,6 +110,7 @@ export const setupOpenVue = (app: App) => {
   app.component('InputGroupAddon', InputGroupAddon)
   app.component('InputText', InputText)
   app.component('Menubar', Menubar)
+  app.component('MultiSelect', MultiSelect)
   app.component('Panel', Panel)
   app.component('ProgressSpinner', ProgressSpinner)
   app.component('Select', Select)

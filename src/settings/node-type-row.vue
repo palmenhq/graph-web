@@ -6,6 +6,7 @@ import type { NodeType } from '../api/use-node-types-query.ts'
 import { useWorkspaceId } from '../api/use-current-workspace-query.ts'
 import TypeRow from './type-row.vue'
 import NodeTypeProperties from './node-type-properties.vue'
+import NodeTypePreferredEdgeTypes from './node-type-preferred-edge-types.vue'
 
 const props = defineProps<{
   nodeType: NodeType
@@ -94,7 +95,9 @@ const remove = () => {
     @cancel="cancel"
     @delete="remove"
   >
-    <template #title>{{ nodeType.title }}</template>
+    <template #title>
+      <span class="type-title">{{ nodeType.title }}</span>
+    </template>
 
     <template #fields>
       <InputText
@@ -107,6 +110,21 @@ const remove = () => {
       />
     </template>
 
-    <NodeTypeProperties :nodeType />
+    <div class="type-details">
+      <NodeTypeProperties :nodeType />
+      <NodeTypePreferredEdgeTypes :nodeType />
+    </div>
   </TypeRow>
 </template>
+
+<style scoped>
+.type-title {
+  font-weight: 600;
+}
+
+.type-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+</style>

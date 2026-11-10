@@ -4,11 +4,17 @@ import { useWorkspaceId } from './use-current-workspace-query.ts'
 import type { ApiList } from './api-list.ts'
 import type { Property } from './use-node-query.ts'
 
+export type PreferredEdgeType = {
+  edgeTypeId: string
+  reverse: boolean
+}
+
 export type NodeType = {
   id: string
   title: string
   createdAt: string
   workspaceId: string
+  preferredEdgeTypes: PreferredEdgeType[]
 }
 
 export const useNodeTypesQuery = () => {

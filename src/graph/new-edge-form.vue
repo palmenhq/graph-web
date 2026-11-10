@@ -70,7 +70,7 @@ const nodeTypes = computed<NodeType[]>(() => {
   ]
 })
 
-const relationshipOptions = computed<RelationshipOption[]>(() =>
+const allRelationshipOptions = computed<RelationshipOption[]>(() =>
   props.edgeTypes.flatMap((edgeType) => [
     {
       key: `${edgeType.id}-f`,
@@ -89,6 +89,32 @@ const relationshipOptions = computed<RelationshipOption[]>(() =>
         ]
       : []),
   ]),
+)
+
+const preferredRelationshipOptions = computed<RelationshipOption[]>(() => {
+  const nodeType = nodeTypesQuery.data?.items.find(
+    (type) => type.id === props.node.nodeTypeId,
+  )
+  const preferredEdgeTypes = nodeType?.preferredEdgeTypes ?? []
+  const optionsByKey = new Map(
+    allRelationshipOptions.value.map((option) => [option.key, option]),
+  )
+  return preferredEdgeTypes.flatMap(({ edgeTypeId, reverse }) => {
+    const option = optionsByKey.get(`${edgeTypeId}-${reverse ? 'r' : 'f'}`)
+    return option ? [option] : []
+  })
+})
+
+const relationshipOptions = computed<RelationshipOption[]>(() =>
+  preferredRelationshipOptions.value.length > 0
+    ? preferredRelationshipOptions.value
+    : allRelationshipOptions.value,
+)
+
+const fixedRelationship = computed<RelationshipOption | null>(() =>
+  preferredRelationshipOptions.value.length === 1
+    ? preferredRelationshipOptions.value[0]
+    : null,
 )
 
 // While typing, the autocomplete model holds the raw query string
@@ -116,13 +142,16 @@ const searchRelationships = (query: string) => {
   relationshipSuggestions.value = [...matches, ...createOptions]
 }
 
-const selectedRelationship = computed<RelationshipOption | null>(() =>
-  relationship.value &&
-  typeof relationship.value === 'object' &&
-  !isCreateEdgeTypeOption(relationship.value)
+const selectedRelationship = computed<RelationshipOption | null>(() => {
+  if (fixedRelationship.value) {
+    return fixedRelationship.value
+  }
+  return relationship.value &&
+    typeof relationship.value === 'object' &&
+    !isCreateEdgeTypeOption(relationship.value)
     ? relationship.value
-    : null,
-)
+    : null
+})
 const targetNode = ref<TargetOption | string | null>(null)
 const nodeSuggestions = ref<TargetOption[]>([])
 
@@ -148,7 +177,7 @@ const onEdgeTypeCreated = (edgeType: CreatedEdgeType) => {
 
 // Select the freshly created edge type as soon as it shows up in the list
 watch(
-  [pendingEdgeType, relationshipOptions],
+  [pendingEdgeType, allRelationshipOptions],
   () => {
     const pending = pendingEdgeType.value
     if (!pending) {
@@ -165,7 +194,7 @@ watch(
               edgeType.reverseRelationshipTitle ===
                 pending.reverseRelationshipTitle,
           )
-    const option = relationshipOptions.value.find(
+    const option = allRelationshipOptions.value.find(
       (o) => o.edgeTypeId === created?.id && !o.reverse,
     )
     if (option) {
@@ -290,7 +319,15 @@ const submit = () => {
         <div class="edge-source" :title="node.title">
           {{ node.title }}
         </div>
+        <div
+          v-if="fixedRelationship"
+          class="edge-relationship-fixed"
+          :title="fixedRelationship.label"
+        >
+          {{ fixedRelationship.label }}
+        </div>
         <AutoComplete
+          v-if="!fixedRelationship"
           input-id="edge-relationship"
           v-model="relationship"
           :suggestions="relationshipSuggestions"
@@ -376,6 +413,15 @@ const submit = () => {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-weight: 600;
+}
+
+.edge-relationship-fixed {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .inline-form {
