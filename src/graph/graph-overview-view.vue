@@ -17,12 +17,51 @@ import NewNodeForm from './new-node-form.vue'
 import NodeDialogContent from './node-dialog-content.vue'
 import { flattenPages } from '../api/api-list.ts'
 import { getNodeTypeTitle } from './helpers.ts'
+import Menu from 'openvue/menu'
 
 const workspaceQuery = reactive(useCurrentWorkspaceQuery())
 
 const nodeTypesQuery = reactive(useNodeTypesQuery())
 
 const nodeTypes = computed<NodeType[]>(() => nodeTypesQuery.data?.items ?? [])
+
+const nodeTypeFilter = ref<string | null>(null)
+const selectedNodeTypeTitle = computed(
+  () =>
+    nodeTypes.value.find((nodeType) => nodeType.id === nodeTypeFilter.value)
+      ?.title,
+)
+const nodeTypeFilterMenu = ref<{ toggle: (event: Event) => void }>()
+const nodeTypeFilterMenuItems = computed(() => [
+  {
+    label: nodeTypeFilter.value ? 'All types' : '✓ All types',
+    command: () => {
+      nodeTypeFilter.value = null
+    },
+  },
+  { separator: true },
+  ...nodeTypes.value.map((nodeType) => ({
+    label:
+      nodeType.id === nodeTypeFilter.value
+        ? `✓ ${nodeType.title}`
+        : nodeType.title,
+    command: () => {
+      nodeTypeFilter.value = nodeType.id
+    },
+  })),
+])
+
+const toggleNodeTypeFilterMenu = (event: Event) =>
+  nodeTypeFilterMenu.value?.toggle(event)
+
+watch(nodeTypes, (types) => {
+  if (
+    nodeTypeFilter.value &&
+    !types.some((nodeType) => nodeType.id === nodeTypeFilter.value)
+  ) {
+    nodeTypeFilter.value = null
+  }
+})
 
 const searchInput = ref('')
 const search = ref('')
@@ -44,7 +83,7 @@ const clearSearch = () => {
   search.value = ''
 }
 
-const searchQuery = reactive(useNodeSearchQuery(search))
+const searchQuery = reactive(useNodeSearchQuery(search, nodeTypeFilter))
 
 const searchedNodes = computed<Node[]>(() => flattenPages(searchQuery.data))
 
@@ -134,43 +173,72 @@ const splitButtonModel = computed(() => {
     </PageHeader>
 
     <div class="overview-layout">
-      <Panel header="Graph" class="overview-graph">
-        <template #icons>
-          <div
-            v-if="nodeTypesQuery.isSuccess && nodeTypes.length > 0"
-            class="search-field"
+      <div
+        v-if="nodeTypesQuery.isSuccess && nodeTypes.length > 0"
+        class="search-controls"
+      >
+        <Button
+          type="button"
+          :severity="nodeTypeFilter ? 'primary' : 'secondary'"
+          :outlined="!!nodeTypeFilter"
+          :text="!nodeTypeFilter"
+          :aria-label="
+            selectedNodeTypeTitle
+              ? `Filter by node type: ${selectedNodeTypeTitle}`
+              : 'Filter by node type'
+          "
+          class="filter-toggle"
+          @click="toggleNodeTypeFilterMenu"
+        >
+          <svg
+            viewBox="0 0 16 16"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.7"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
           >
-            <InputText
-              v-model="searchInput"
-              type="search"
-              placeholder="Search"
-              aria-label="Search"
-              class="search-input"
-              @keydown.esc="clearSearch"
-            />
-            <button
-              v-if="searchInput"
-              type="button"
-              class="search-clear"
-              aria-label="Clear search"
-              @click="clearSearch"
+            <path d="M2 3h12l-4.5 5.2v4.3l-3 1V8.2L2 3z" />
+          </svg>
+          <span v-if="selectedNodeTypeTitle">{{ selectedNodeTypeTitle }}</span>
+        </Button>
+        <Menu ref="nodeTypeFilterMenu" :model="nodeTypeFilterMenuItems" popup />
+        <div class="search-field">
+          <InputText
+            v-model="searchInput"
+            type="search"
+            placeholder="Search"
+            aria-label="Search"
+            class="search-input"
+            @keydown.esc="clearSearch"
+          />
+          <button
+            v-if="searchInput"
+            type="button"
+            class="search-clear"
+            aria-label="Clear search"
+            @click="clearSearch"
+          >
+            <svg
+              viewBox="0 0 16 16"
+              width="14"
+              height="14"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              aria-hidden="true"
             >
-              <svg
-                viewBox="0 0 16 16"
-                width="14"
-                height="14"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                aria-hidden="true"
-              >
-                <path d="M4 4l8 8M12 4l-8 8" />
-              </svg>
-            </button>
-          </div>
-        </template>
+              <path d="M4 4l8 8M12 4l-8 8" />
+            </svg>
+          </button>
+        </div>
+      </div>
 
+      <div class="overview-graph">
         <div v-if="nodeTypesQuery.isSuccess && nodeTypes.length > 0">
           <Spinner v-if="searchQuery.isPending" />
 
@@ -225,7 +293,7 @@ const splitButtonModel = computed(() => {
             <Button @click="openNewNodeTypeDrawer">Create Type</Button>
           </div>
         </div>
-      </Panel>
+      </div>
     </div>
 
     <NodeDialogContent
@@ -266,13 +334,41 @@ const splitButtonModel = computed(() => {
   align-items: start;
 }
 
+.search-controls {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.filter-toggle {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: min(50%, 14rem);
+}
+
+.filter-toggle svg {
+  flex: 0 0 auto;
+}
+
+.filter-toggle span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .search-field {
   position: relative;
   display: inline-flex;
+  flex: 1 1 auto;
   align-items: center;
+  min-width: 0;
 }
 
 .search-input {
+  width: 100%;
   padding-right: 2.25rem;
 }
 
@@ -307,6 +403,10 @@ const splitButtonModel = computed(() => {
 }
 
 @media (max-width: 640px) {
+  .overview-layout {
+    gap: 0.5rem;
+  }
+
   .node-grid {
     grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
     gap: 0.5rem;

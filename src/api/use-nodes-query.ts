@@ -18,7 +18,7 @@ export type Node = {
 
 const fetchNodes = (
   workspaceId: string,
-  params: { search?: string; cursor?: string },
+  params: { search?: string; cursor?: string; nodeTypeId?: string },
 ) =>
   apiClient
     .get<ApiList<Node>>(url`/workspaces/${workspaceId}/graph/nodes/getAll`, {
@@ -26,31 +26,26 @@ const fetchNodes = (
     })
     .then((r) => r.data)
 
-export const useNodesQuery = () => {
-  const workspaceId = useWorkspaceId()
-
-  return useInfiniteQuery({
-    queryKey: ['w', workspaceId, 'nodes'],
-    queryFn: ({ pageParam }) => fetchNodes(workspaceId, { cursor: pageParam }),
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-  })
-}
-
-export const useNodeSearchQuery = (search: MaybeRefOrGetter<string>) => {
+export const useNodeSearchQuery = (
+  search: MaybeRefOrGetter<string>,
+  nodeTypeId?: MaybeRefOrGetter<string | null | undefined>,
+) => {
   const workspaceId = useWorkspaceId()
   const term = computed(() => toValue(search).trim())
+  const selectedNodeTypeId = computed(() => toValue(nodeTypeId) || undefined)
 
   return useInfiniteQuery({
-    queryKey: computed(() =>
-      term.value
-        ? ['w', workspaceId, 'nodes', 'search', term.value]
-        : ['w', workspaceId, 'nodes'],
-    ),
+    queryKey: computed(() => [
+      'w',
+      workspaceId,
+      'nodes',
+      { search: term.value, nodeTypeId: selectedNodeTypeId.value },
+    ]),
     queryFn: ({ pageParam }) =>
       fetchNodes(workspaceId, {
         search: term.value || undefined,
         cursor: pageParam,
+        nodeTypeId: selectedNodeTypeId.value,
       }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
