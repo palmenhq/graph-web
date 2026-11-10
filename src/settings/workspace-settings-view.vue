@@ -106,4 +106,20 @@ const logOut = async () => {
   flex-direction: column;
   gap: 1.5rem;
 }
+
+@media (max-width: 640px) {
+  .settings-layout {
+    --p-panel-background: var(--p-content-background);
+    --p-panel-border-color: var(--p-content-border-color);
+    --p-panel-border-radius: var(--p-content-border-radius);
+    --p-panel-header-padding: 0.75rem;
+    --p-panel-content-padding: 0 0.75rem 0.75rem;
+    --p-panel-footer-padding: 0 0.75rem 0.75rem;
+  }
+
+  .settings-layout :deep(.p-panel + .p-panel) {
+    border-top-color: var(--p-panel-border-color);
+    padding-top: 0;
+  }
+}
 </style>

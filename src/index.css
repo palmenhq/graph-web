@@ -52,6 +52,14 @@ input {
   width: 100%;
 }
 
+/*
+ * Hidden focus inputs of OpenVue selects use the browser default font size
+ * (< 16px), which makes iOS Safari zoom in when they receive focus.
+ */
+.p-hidden-accessible input {
+  font-size: 1rem;
+}
+
 /* Responsive openvue tokens */
 :root {
   --app-panel-background: var(--p-content-background);
