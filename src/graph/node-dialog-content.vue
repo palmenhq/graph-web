@@ -189,9 +189,36 @@ const deleteNode = () => {
 
     <Spinner v-if="nodeQuery.isPending" />
 
-    <div v-else-if="nodeQuery.isError">error</div>
+    <div v-else-if="nodeQuery.isError || !node" class="guard-state">
+      <template v-if="nodeQuery.isError">
+        <h2>Something went wrong</h2>
+        <p class="guard-message">
+          We couldn't load this item.
+          <span class="guard-detail">{{ nodeQuery.error?.message }}</span>
+        </p>
+      </template>
+      <template v-else>
+        <h2>Item not found</h2>
+        <p class="guard-message">
+          This item doesn't exist, or it may have been deleted.
+        </p>
+      </template>
 
-    <div v-else-if="!node"><em>Item not found</em></div>
+      <div class="guard-actions">
+        <Button
+          v-if="nodeQuery.isError"
+          severity="secondary"
+          outlined
+          :loading="nodeQuery.isFetching"
+          @click="nodeQuery.refetch()"
+        >
+          Try again
+        </Button>
+        <RouterLink :to="`/w/${workspaceId}`">
+          <Button>&lsaquo; Back to overview</Button>
+        </RouterLink>
+      </div>
+    </div>
 
     <template v-else>
       <div v-if="nodeTypesQuery.data?.items" class="section-node-type">
@@ -362,6 +389,33 @@ const deleteNode = () => {
   justify-content: flex-end;
   align-items: center;
   gap: 1rem;
+}
+
+.guard-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+}
+
+.guard-message {
+  margin: 0;
+  color: var(--p-text-muted-color);
+}
+
+.guard-detail {
+  display: block;
+  font-family: monospace;
+  font-size: 0.875rem;
+}
+
+.guard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
 }
 
 .sub-form {

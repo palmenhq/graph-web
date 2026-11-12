@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/vue-query'
+import { isAxiosError } from 'axios'
 import { apiClient, url } from './index.ts'
 import { useWorkspaceId } from './use-current-workspace-query.ts'
 
@@ -51,6 +52,24 @@ export const useNodeQuery = (nodeId: string) => {
         .get<FullNode>(
           url`/workspaces/${workspaceId}/graph/nodes/getById?id=${nodeId}`,
         )
-        .then((r) => r.data),
+        .then((r) => r.data)
+        .catch((r) => {
+          if (
+            isAxiosError(r) &&
+            r.response?.status === 422 &&
+            r.response?.data?.['code'] === 'node_not_found'
+          ) {
+            return null
+          } else {
+            throw r
+          }
+        }),
+    retry: (failureCount, error) => {
+      const status = isAxiosError(error) ? error.response?.status : undefined
+      if (status !== undefined && status >= 400 && status < 500) {
+        return false
+      }
+      return failureCount < 3
+    },
   })
 }
