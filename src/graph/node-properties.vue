@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, type InputTypeHTMLAttribute } from 'vue'
 import type { JSONContent } from '@tiptap/core'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { isAxiosError } from 'axios'
@@ -20,7 +20,6 @@ import { isValidPropertyValue } from './property-value-validator.ts'
 import { propertyValueDisplay } from './property-value-display.ts'
 import RichTextEditor from '../design/rich-text-editor.vue'
 import { parseNoteBody, serializeNoteBody } from '../design/rich-text-utils.ts'
-import { type InputTypeHTMLAttribute } from '@vue/runtime-dom'
 
 const props = defineProps<{
   node: Pick<Node, 'id' | 'nodeTypeId'>

@@ -107,14 +107,22 @@ const deleteNode = () => {
   const typeLabel = nodeTypeTitle.value
     ? nodeTypeTitle.value.toLowerCase()
     : 'item'
-  if (window.confirm(`Delete ${typeLabel} "${title}" and all its connections?`)) {
+  if (
+    window.confirm(`Delete ${typeLabel} "${title}" and all its connections?`)
+  ) {
     deleteNodeMutation.mutate(props.nodeId)
   }
 }
 </script>
 
 <template>
-  <Dialog v-model:visible="visible" modal dismissable-mask class="node-dialog">
+  <Dialog
+    v-model:visible="visible"
+    modal
+    dismissable-mask
+    :draggable="false"
+    class="node-dialog"
+  >
     <template #header>
       <NodeTitleEditor v-if="node" :node="node" />
     </template>
