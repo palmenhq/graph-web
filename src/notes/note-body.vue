@@ -5,11 +5,18 @@ import { format, formatDistance, isValid, parseISO } from 'date-fns'
 import RichText from '../design/rich-text.vue'
 import type { NoteNode } from '../api/use-notes-query.ts'
 import { useWorkspaceId } from '../api/use-current-workspace-query.ts'
+import OiPencil from '@openvue/openicons-vue/icons/OiPencil'
 
 const props = defineProps<{
   body: JSONContent | string
   createdAt?: string
+  updatedAt?: string | null
   node?: NoteNode | null
+  editable?: boolean
+}>()
+
+const emit = defineEmits<{
+  edit: []
 }>()
 
 const workspaceId = useWorkspaceId()
@@ -34,6 +41,20 @@ const createdAtRelative = computed(() =>
     ? formatDistance(createdAtDate.value, now.value, { addSuffix: true })
     : null,
 )
+
+const updatedAtDate = computed(() => {
+  if (!props.updatedAt || props.updatedAt === props.createdAt) {
+    return null
+  }
+  const date = parseISO(props.updatedAt)
+  return isValid(date) ? date : null
+})
+
+const updatedAtRelative = computed(() =>
+  updatedAtDate.value
+    ? formatDistance(updatedAtDate.value, now.value, { addSuffix: true })
+    : null,
+)
 </script>
 
 <template>
@@ -46,14 +67,38 @@ const createdAtRelative = computed(() =>
         }}</RouterLink>
       </div>
       <RichText :content="body" />
-      <time
-        v-if="createdAtDate"
-        class="note-created-at"
-        :datetime="createdAtDate.toISOString()"
-        :title="format(createdAtDate, 'PPpp')"
-      >
-        {{ createdAtRelative }}
-      </time>
+      <div class="note-footer">
+        <time
+          v-if="createdAtDate"
+          class="note-created-at"
+          :datetime="createdAtDate.toISOString()"
+          :title="format(createdAtDate, 'PPpp')"
+        >
+          {{ createdAtRelative }}
+        </time>
+        <time
+          v-if="updatedAtDate"
+          class="note-updated-at"
+          :datetime="updatedAtDate.toISOString()"
+          :title="format(updatedAtDate, 'PPpp')"
+        >
+          (edited {{ updatedAtRelative }})
+        </time>
+        <Button
+          v-if="editable"
+          type="button"
+          size="small"
+          text
+          rounded
+          severity="secondary"
+          class="note-edit"
+          aria-label="Edit note"
+          title="Edit note"
+          @click="emit('edit')"
+        >
+          <OiPencil />
+        </Button>
+      </div>
     </template>
   </Card>
 </template>
@@ -69,10 +114,26 @@ const createdAtRelative = computed(() =>
   font-size: 0.875rem;
 }
 
-.note-created-at {
-  display: block;
+.note-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
   padding-top: 0.5rem;
+}
+
+.note-edit {
+  margin-left: auto;
+}
+
+.note-created-at,
+.note-updated-at {
+  display: block;
   color: var(--p-text-muted-color);
   font-size: 0.875rem;
+}
+
+.note-updated-at {
+  font-style: italic;
 }
 </style>

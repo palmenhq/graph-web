@@ -15,6 +15,7 @@ import { useWorkspaceId } from '../api/use-current-workspace-query.ts'
 import { type Note, useNodeNotesQuery } from '../api/use-notes-query.ts'
 import NoteBody from '../notes/note-body.vue'
 import NewNoteForm from '../notes/new-note-form.vue'
+import EditNoteForm from '../notes/edit-note-form.vue'
 import { getNodeTypeTitle } from './helpers.ts'
 import { useNodeTypesQuery } from '../api/use-node-types-query.ts'
 import { useNodeQuery } from '../api/use-node-query.ts'
@@ -38,12 +39,15 @@ const workspaceId = useWorkspaceId()
 
 const nodePropertiesRef = ref<InstanceType<typeof NodeProperties> | null>(null)
 const newNoteFormRef = ref<InstanceType<typeof NewNoteForm> | null>(null)
+const editNoteFormRefs = ref<InstanceType<typeof EditNoteForm>[]>([])
+const editingNoteId = ref<string | null>(null)
 const skipUnsavedChangesPrompt = ref(false)
 
 const hasUnsavedChanges = computed(
   () =>
     !!nodePropertiesRef.value?.hasUnsavedChanges ||
-    !!newNoteFormRef.value?.hasUnsavedChanges,
+    !!newNoteFormRef.value?.hasUnsavedChanges ||
+    editNoteFormRefs.value.some((form) => form?.hasUnsavedChanges),
 )
 
 const confirmDiscardChanges = () => {
@@ -88,6 +92,21 @@ const edgeTypes = computed<EdgeType[]>(() => edgeTypesQuery.data?.items ?? [])
 const notes = computed<Note[]>(() => notesQuery.data?.items ?? [])
 
 const newEdgeVisible = ref(false)
+
+const startEditingNote = (note: Note) => {
+  const hasNoteChanges = editNoteFormRefs.value.some(
+    (form) => form?.hasUnsavedChanges,
+  )
+  if (
+    editingNoteId.value &&
+    editingNoteId.value !== note.id &&
+    hasNoteChanges &&
+    !window.confirm('Discard your changes to the note you are editing?')
+  ) {
+    return
+  }
+  editingNoteId.value = note.id
+}
 
 const queryClient = useQueryClient()
 
@@ -267,10 +286,21 @@ const deleteNode = () => {
 
         <ul v-else class="note-list">
           <li v-for="note in notes" :key="note.id">
+            <EditNoteForm
+              v-if="editingNoteId === note.id"
+              ref="editNoteFormRefs"
+              :note="note"
+              @success="editingNoteId = null"
+              @cancel="editingNoteId = null"
+            />
             <NoteBody
+              v-else
               :body="note.body"
               :created-at="note.createdAt"
+              :updated-at="note.updatedAt"
               :node="note.node?.id !== node.id ? note.node : null"
+              editable
+              @edit="startEditingNote(note)"
             />
           </li>
         </ul>

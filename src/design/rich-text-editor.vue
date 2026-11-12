@@ -7,7 +7,7 @@ import Paragraph from '@tiptap/extension-paragraph'
 import Text from '@tiptap/extension-text'
 import Link from '@tiptap/extension-link'
 import Mention from '@tiptap/extension-mention'
-import { Placeholder } from '@tiptap/extensions'
+import { Placeholder, UndoRedo } from '@tiptap/extensions'
 import type { SuggestionProps } from '@tiptap/suggestion'
 import { useFetchNodeSuggestions } from '../api/use-nodes-query.ts'
 
@@ -82,6 +82,7 @@ const editor = useEditor({
       defaultProtocol: 'https',
     }),
     Placeholder.configure({ placeholder: props.placeholder ?? '' }),
+    UndoRedo,
     Mention.configure({
       HTMLAttributes: { class: 'note-mention' },
       suggestion: {
@@ -140,6 +141,24 @@ const editor = useEditor({
       },
     }),
   ],
+  editorProps: {
+    handleKeyDown: (view, event) => {
+      if (event.key !== 'Enter' || !(event.metaKey || event.ctrlKey)) {
+        return false
+      }
+      const form = view.dom.closest('form')
+      if (!form) {
+        return false
+      }
+      const submitButton = form.querySelector<HTMLButtonElement>(
+        'button[type="submit"]',
+      )
+      if (!submitButton?.disabled) {
+        form.requestSubmit()
+      }
+      return true
+    },
+  },
   onUpdate: ({ editor }) => {
     model.value = editor.getJSON()
   },

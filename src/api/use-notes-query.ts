@@ -14,6 +14,12 @@ export type NewNote = {
   mentions: NoteMention[]
 }
 
+export type UpdateNote = {
+  id: string
+  body: JSONContent
+  mentions: NoteMention[]
+}
+
 export type NoteNode = {
   id: string
   title: string
@@ -23,6 +29,7 @@ export type Note = Omit<NewNote, 'nodeId'> & {
   id: string
   node: NoteNode | null
   createdAt: string
+  updatedAt?: string | null
 }
 
 export const extractMentions = (doc: JSONContent): NoteMention[] => {
