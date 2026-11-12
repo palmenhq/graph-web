@@ -7,10 +7,11 @@ import { apiClient, url } from '../api'
 import { useWorkspaceId } from '../api/use-current-workspace-query.ts'
 import type { NodeType } from '../api/use-node-types-query.ts'
 import Spinner from '../design/spinner.vue'
+import type { Node } from '../api/use-nodes-query'
 
 const props = defineProps<{
   nodeType: NodeType
-  onSuccess?: () => void
+  onSuccess?: (node: Node) => void
 }>()
 
 const workspaceId = useWorkspaceId()
@@ -20,16 +21,16 @@ const createNodeMutation = reactive(
   useMutation({
     mutationKey: ['nodes', 'new'],
     mutationFn: (newNode: { title: string; nodeTypeId: string }) =>
-      apiClient.post(
+      apiClient.post<Node>(
         url`/workspaces/${workspaceId}/graph/nodes/create`,
         newNode,
       ),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
+    onSuccess: async (response) => {
+      await queryClient.invalidateQueries({
         queryKey: ['w', workspaceId, 'nodes'],
       })
       title.value = ''
-      props.onSuccess?.()
+      props.onSuccess?.(response.data)
     },
   }),
 )

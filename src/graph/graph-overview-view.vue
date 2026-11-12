@@ -18,6 +18,7 @@ import NodeDialogContent from './node-dialog-content.vue'
 import { flattenPages } from '../api/api-list.ts'
 import { getNodeTypeTitle } from './helpers.ts'
 import Menu from 'openvue/menu'
+import { url } from '../api'
 
 const workspaceQuery = reactive(useCurrentWorkspaceQuery())
 
@@ -113,6 +114,11 @@ const openNewNodeTypeDrawer = () => {
 const splitButtonLabel = computed(() =>
   nodeTypes.value[0] ? `New ${nodeTypes.value[0].title}` : 'New Type',
 )
+
+const onNewNodeCreated = (newNode: Node) => {
+  newNodeDrawerVisible.value = false
+  router.push(url`/w/${workspaceId}/nodes/${newNode.id}`)
+}
 
 const onSplitButtonClick = () => {
   const [first] = nodeTypes.value
@@ -312,7 +318,7 @@ const splitButtonModel = computed(() => {
         v-if="selectedNodeType"
         :key="selectedNodeType.id"
         :node-type="selectedNodeType"
-        @success="newNodeDrawerVisible = false"
+        @success="onNewNodeCreated"
       />
     </Drawer>
 
