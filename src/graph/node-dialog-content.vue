@@ -81,6 +81,7 @@ onBeforeUnmount(() =>
 
 const nodeQuery = reactive(useNodeQuery(props.nodeId))
 const node = computed(() => nodeQuery.data)
+const isReadonly = computed(() => !!node.value?.deletedAt)
 
 const edgesQuery = reactive(useNodeEdgesQuery(props.nodeId))
 const edgeTypesQuery = reactive(useEdgeTypesQuery())
@@ -168,11 +169,28 @@ const deleteNode = () => {
     ? nodeTypeTitle.value.toLowerCase()
     : 'item'
   if (
-    window.confirm(`Delete ${typeLabel} "${title}" and all its connections?`)
+    window.confirm(`Archive ${typeLabel} "${title}" and all its connections?`)
   ) {
     deleteNodeMutation.mutate(props.nodeId)
   }
 }
+
+const restoreNodeMutation = reactive(
+  useMutation({
+    mutationKey: ['nodes', 'restore'],
+    mutationFn: (id: string) =>
+      apiClient.post(url`/workspaces/${workspaceId}/graph/nodes/restore`, {
+        id,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['w', workspaceId, 'nodes'] })
+      queryClient.invalidateQueries({ queryKey: ['w', workspaceId, 'edges'] })
+      queryClient.invalidateQueries({ queryKey: ['w', workspaceId, 'notes'] })
+    },
+  }),
+)
+
+const restoreNode = () => restoreNodeMutation.mutate(props.nodeId)
 </script>
 
 <template>
@@ -184,7 +202,11 @@ const deleteNode = () => {
     class="node-dialog"
   >
     <template #header>
-      <NodeTitleEditor v-if="node" :node="node" />
+      <NodeTitleEditor
+        v-if="node"
+        :node="node"
+        :readonly="isReadonly"
+      />
     </template>
 
     <Spinner v-if="nodeQuery.isPending" />
@@ -221,16 +243,47 @@ const deleteNode = () => {
     </div>
 
     <template v-else>
+      <Message
+        v-if="node.deletedAt"
+        severity="secondary"
+        style="margin-bottom: 1rem; margin-top: 1px;"
+        :pt="{
+          text: {
+            style:
+              'flex: 1; display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;',
+          },
+        }"
+      >
+        This {{ (nodeTypeTitle ?? 'item').toLowerCase() }} is archived
+        <Button
+          size="small"
+          severity="secondary"
+          outlined
+          :loading="restoreNodeMutation.isPending"
+          @click="restoreNode"
+        >
+          Unarchive
+        </Button>
+      </Message>
+      <div v-if="restoreNodeMutation.isError" class="mutation-error">
+        error unarchiving {{ (nodeTypeTitle ?? 'item').toLowerCase() }}
+      </div>
+
       <div v-if="nodeTypesQuery.data?.items" class="section-node-type">
         {{ getNodeTypeTitle(nodeTypesQuery.data.items, node.nodeTypeId) }}
       </div>
 
-      <NodeProperties ref="nodePropertiesRef" :node="node" />
+      <NodeProperties
+        ref="nodePropertiesRef"
+        :node="node"
+        :readonly="isReadonly"
+      />
 
       <section class="section">
         <div class="section-header">
           <h3>Connections</h3>
           <Button
+            v-if="!isReadonly"
             size="small"
             :disabled="edgeTypesQuery.isPending"
             :outlined="newEdgeVisible"
@@ -240,7 +293,7 @@ const deleteNode = () => {
           </Button>
         </div>
 
-        <div v-if="newEdgeVisible" class="sub-form">
+        <div v-if="newEdgeVisible && !isReadonly" class="sub-form">
           <NewEdgeForm
             :node="node"
             :edge-types="edgeTypes"
@@ -276,6 +329,7 @@ const deleteNode = () => {
             </span>
 
             <Button
+              v-if="!isReadonly"
               size="small"
               severity="danger"
               text
@@ -300,7 +354,11 @@ const deleteNode = () => {
         </div>
 
         <div class="section">
-          <NewNoteForm ref="newNoteFormRef" :node-id="node.id" />
+          <NewNoteForm
+            v-if="!isReadonly"
+            ref="newNoteFormRef"
+            :node-id="node.id"
+          />
         </div>
 
         <Spinner v-if="notesQuery.isPending" />
@@ -314,7 +372,7 @@ const deleteNode = () => {
         <ul v-else class="note-list">
           <li v-for="note in notes" :key="note.id">
             <EditNoteForm
-              v-if="editingNoteId === note.id"
+              v-if="!isReadonly && editingNoteId === note.id"
               ref="editNoteFormRefs"
               :note="note"
               @success="editingNoteId = null"
@@ -326,25 +384,25 @@ const deleteNode = () => {
               :created-at="note.createdAt"
               :updated-at="note.updatedAt"
               :node="note.node?.id !== node.id ? note.node : null"
-              editable
+              :editable="!isReadonly"
               @edit="startEditingNote(note)"
             />
           </li>
         </ul>
       </section>
 
-      <section class="danger-zone">
+      <section v-if="!node.deletedAt" class="danger-zone">
         <div v-if="deleteNodeMutation.isError">
-          error deleting {{ (nodeTypeTitle ?? 'item').toLowerCase() }}
+          error archiving {{ (nodeTypeTitle ?? 'item').toLowerCase() }}
         </div>
         <Button
-          severity="danger"
+          severity="secondary"
           outlined
           :loading="deleteNodeMutation.isPending"
           @click="deleteNode"
           size="small"
         >
-          Delete {{ nodeTypeTitle ?? 'Item' }}
+          Archive {{ nodeTypeTitle ?? 'Item' }}
         </Button>
       </section>
     </template>
@@ -354,6 +412,11 @@ const deleteNode = () => {
 <style scoped>
 .section {
   padding-bottom: 1.5rem;
+}
+
+.mutation-error {
+  margin-bottom: 1rem;
+  color: var(--p-text-muted-color);
 }
 
 .section-node-type {

@@ -23,6 +23,7 @@ import { parseNoteBody, serializeNoteBody } from '../design/rich-text-utils.ts'
 
 const props = defineProps<{
   node: Pick<Node, 'id' | 'nodeTypeId'>
+  readonly?: boolean
 }>()
 
 const workspaceId = useWorkspaceId()
@@ -287,7 +288,7 @@ const inputType = (valueType: PropertyValueType): InputTypeHTMLAttribute => {
           </span>
 
           <form
-            v-if="editingPropertyId === property.propertyId"
+            v-if="!readonly && editingPropertyId === property.propertyId"
             class="property-editor"
             @submit.prevent="saveValue"
           >
@@ -361,6 +362,7 @@ const inputType = (valueType: PropertyValueType): InputTypeHTMLAttribute => {
               {{ copiedPropertyId === property.propertyId ? '✓' : '⧉' }}
             </Button>
             <Button
+              v-if="!readonly"
               type="button"
               size="small"
               text
@@ -375,7 +377,7 @@ const inputType = (valueType: PropertyValueType): InputTypeHTMLAttribute => {
           </div>
         </li>
 
-        <li v-if="adding" class="property-row">
+        <li v-if="!readonly && adding" class="property-row">
           <form class="property-editor" @submit.prevent="submitNewProperty">
             <InputText
               v-model="newPropertyName"
@@ -424,7 +426,7 @@ const inputType = (valueType: PropertyValueType): InputTypeHTMLAttribute => {
       </ul>
 
       <Button
-        v-if="!adding"
+        v-if="!readonly && !adding"
         size="small"
         text
         severity="secondary"

@@ -11,6 +11,7 @@ import OiCheck from '@openvue/openicons-vue/icons/OiCheck'
 
 const props = defineProps<{
   node: Pick<Node, 'id' | 'title'>
+  readonly?: boolean
 }>()
 
 const workspaceId = useWorkspaceId()
@@ -78,7 +79,7 @@ watch(copied, () => {
 </script>
 
 <template>
-  <form v-if="editing" class="title-editor" @submit.prevent="save">
+  <form v-if="editing && !readonly" class="title-editor" @submit.prevent="save">
     <InputText
       v-model="title"
       autofocus
@@ -97,6 +98,7 @@ watch(copied, () => {
       Save
     </Button>
     <Button
+      v-if="!readonly"
       type="button"
       size="small"
       severity="secondary"
@@ -120,6 +122,7 @@ watch(copied, () => {
       aria-label="Edit title"
       title="Edit title"
       @click="startEditing"
+      v-if="!readonly"
     >
       <OiPencil />
     </Button>

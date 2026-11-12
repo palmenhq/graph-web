@@ -5,6 +5,7 @@ import { definePreset } from '@openvue/themes'
 import Aura from '@openvue/themes/aura'
 import {
   AutoComplete,
+  Badge,
   Card,
   DataView,
   Dialog,
@@ -14,6 +15,7 @@ import {
   InputGroupAddon,
   InputText,
   Menubar,
+  Message,
   MultiSelect,
   Panel,
   ProgressSpinner,
@@ -99,6 +101,7 @@ export const setupOpenVue = (app: App) => {
     theme: { preset: Preset },
   } satisfies PrimeVueConfiguration)
 
+  app.component('Badge', Badge)
   app.component('Button', Button)
   app.component('AutoComplete', AutoComplete)
   app.component('Card', Card)
@@ -110,6 +113,7 @@ export const setupOpenVue = (app: App) => {
   app.component('InputGroupAddon', InputGroupAddon)
   app.component('InputText', InputText)
   app.component('Menubar', Menubar)
+  app.component('Message', Message)
   app.component('MultiSelect', MultiSelect)
   app.component('Panel', Panel)
   app.component('ProgressSpinner', ProgressSpinner)

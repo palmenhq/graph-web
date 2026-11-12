@@ -32,6 +32,15 @@ const selectedNodeTypeTitle = computed(
     nodeTypes.value.find((nodeType) => nodeType.id === nodeTypeFilter.value)
       ?.title,
 )
+const includeDeleted = ref(false)
+const hasActiveFilter = computed(
+  () => !!nodeTypeFilter.value || includeDeleted.value,
+)
+const filterLabel = computed(() =>
+  [selectedNodeTypeTitle.value, includeDeleted.value ? '+ archived' : null]
+    .filter(Boolean)
+    .join(' '),
+)
 const nodeTypeFilterMenu = ref<{ toggle: (event: Event) => void }>()
 const nodeTypeFilterMenuItems = computed(() => [
   {
@@ -50,6 +59,13 @@ const nodeTypeFilterMenuItems = computed(() => [
       nodeTypeFilter.value = nodeType.id
     },
   })),
+  { separator: true },
+  {
+    label: includeDeleted.value ? '✓ Show archived' : 'Show archived',
+    command: () => {
+      includeDeleted.value = !includeDeleted.value
+    },
+  },
 ])
 
 const toggleNodeTypeFilterMenu = (event: Event) =>
@@ -84,7 +100,9 @@ const clearSearch = () => {
   search.value = ''
 }
 
-const searchQuery = reactive(useNodeSearchQuery(search, nodeTypeFilter))
+const searchQuery = reactive(
+  useNodeSearchQuery(search, nodeTypeFilter, includeDeleted),
+)
 
 const searchedNodes = computed<Node[]>(() => flattenPages(searchQuery.data))
 
@@ -182,14 +200,10 @@ const splitButtonModel = computed(() => {
     >
       <Button
         type="button"
-        :severity="nodeTypeFilter ? 'primary' : 'secondary'"
-        :outlined="!!nodeTypeFilter"
-        :text="!nodeTypeFilter"
-        :aria-label="
-          selectedNodeTypeTitle
-            ? `Filter by node type: ${selectedNodeTypeTitle}`
-            : 'Filter by node type'
-        "
+        :severity="hasActiveFilter ? 'primary' : 'secondary'"
+        :outlined="hasActiveFilter"
+        :text="!hasActiveFilter"
+        :aria-label="filterLabel ? `Filter: ${filterLabel}` : 'Filter'"
         class="filter-toggle"
         @click="toggleNodeTypeFilterMenu"
       >
@@ -206,7 +220,7 @@ const splitButtonModel = computed(() => {
         >
           <path d="M2 3h12l-4.5 5.2v4.3l-3 1V8.2L2 3z" />
         </svg>
-        <span v-if="selectedNodeTypeTitle">{{ selectedNodeTypeTitle }}</span>
+        <span v-if="filterLabel">{{ filterLabel }}</span>
       </Button>
       <Menu ref="nodeTypeFilterMenu" :model="nodeTypeFilterMenuItems" popup />
       <div class="search-field">
@@ -261,9 +275,13 @@ const splitButtonModel = computed(() => {
             :key="node.id"
             :to="nodeLink(node)"
             class="node-card-link"
+            :class="{ 'node-card-deleted': node.deletedAt }"
           >
             <Card style="height: 100%">
-              <template #title>{{ node.title }}</template>
+              <template #title>
+                {{ node.title }}
+                <Badge v-if="node.deletedAt" severity="secondary">Archived</Badge>
+              </template>
               <template
                 v-if="getNodeTypeTitle(nodeTypes, node.nodeTypeId)"
                 #subtitle
@@ -436,5 +454,10 @@ const splitButtonModel = computed(() => {
 .node-card-link:hover,
 .node-card-link:focus-visible {
   border: 2px solid var(--p-primary-color);
+}
+
+.node-card-deleted {
+  border-style: dashed;
+  opacity: 0.7;
 }
 </style>

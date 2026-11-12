@@ -39,6 +39,7 @@ export type FullNode = {
   id: string
   title: string
   nodeTypeId: string
+  deletedAt?: string | null
   properties: PropertyValue[]
 }
 

@@ -14,11 +14,17 @@ export type Node = {
   nodeTypeId: string
   createdAt: string
   workspaceId: string
+  deletedAt?: string | null
 }
 
 const fetchNodes = (
   workspaceId: string,
-  params: { search?: string; cursor?: string; nodeTypeId?: string },
+  params: {
+    search?: string
+    cursor?: string
+    nodeTypeId?: string
+    includeDeleted?: string
+  },
 ) =>
   apiClient
     .get<ApiList<Node>>(url`/workspaces/${workspaceId}/graph/nodes/getAll`, {
@@ -29,23 +35,30 @@ const fetchNodes = (
 export const useNodeSearchQuery = (
   search: MaybeRefOrGetter<string>,
   nodeTypeId?: MaybeRefOrGetter<string | null | undefined>,
+  includeDeleted?: MaybeRefOrGetter<boolean | undefined>,
 ) => {
   const workspaceId = useWorkspaceId()
   const term = computed(() => toValue(search).trim())
   const selectedNodeTypeId = computed(() => toValue(nodeTypeId) || undefined)
+  const withDeleted = computed(() => !!toValue(includeDeleted))
 
   return useInfiniteQuery({
     queryKey: computed(() => [
       'w',
       workspaceId,
       'nodes',
-      { search: term.value, nodeTypeId: selectedNodeTypeId.value },
+      {
+        search: term.value,
+        nodeTypeId: selectedNodeTypeId.value,
+        includeDeleted: withDeleted.value,
+      },
     ]),
     queryFn: ({ pageParam }) =>
       fetchNodes(workspaceId, {
         search: term.value || undefined,
         cursor: pageParam,
         nodeTypeId: selectedNodeTypeId.value,
+        includeDeleted: withDeleted.value ? 'true' : undefined,
       }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
