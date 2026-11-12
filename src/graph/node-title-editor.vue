@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { apiClient, url } from '../api'
 import type { Node } from '../api/use-nodes-query.ts'
@@ -7,6 +7,7 @@ import { useWorkspaceId } from '../api/use-current-workspace-query.ts'
 import copy from 'copy-to-clipboard'
 import OiPencil from '@openvue/openicons-vue/icons/OiPencil'
 import OiClone from '@openvue/openicons-vue/icons/OiClone'
+import OiCheck from '@openvue/openicons-vue/icons/OiCheck'
 
 const props = defineProps<{
   node: Pick<Node, 'id' | 'title'>
@@ -17,6 +18,7 @@ const queryClient = useQueryClient()
 
 const editing = ref(false)
 const title = ref('')
+const copied = ref(false)
 
 const updateNodeMutation = reactive(
   useMutation({
@@ -65,7 +67,14 @@ const copyLink = () => {
       window.location.host +
       window.location.pathname,
   )
+  copied.value = true
 }
+
+watch(copied, () => {
+  setTimeout(() => {
+    copied.value = false
+  }, 1000)
+})
 </script>
 
 <template>
@@ -125,7 +134,8 @@ const copyLink = () => {
       :title="`Copy link to ${node.title}`"
       @click="copyLink"
     >
-      <OiClone />
+      <OiClone v-if="!copied" />
+      <OiCheck v-else />
     </Button>
   </div>
 </template>
