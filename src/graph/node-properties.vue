@@ -225,6 +225,26 @@ const submitNewProperty = () => {
   })
 }
 
+const hasUnsavedChanges = computed(() => {
+  const propertyId = editingPropertyId.value
+  if (propertyId) {
+    const current = properties.value.find((p) => p.propertyId === propertyId)
+    if (current) {
+      const value =
+        current.valueType === 'textarea'
+          ? serializeNoteBody(draftNoteBody.value)
+          : draftValue.value.trim() || null
+      if ((current.value ?? null) !== value) {
+        return true
+      }
+    }
+  }
+
+  return adding.value && !!newPropertyName.value.trim()
+})
+
+defineExpose({ hasUnsavedChanges })
+
 const inputType = (valueType: PropertyValueType): InputTypeHTMLAttribute => {
   switch (valueType) {
     case 'link':

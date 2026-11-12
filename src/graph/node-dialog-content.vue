@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { apiClient, url } from '../api'
 import Spinner from '../design/spinner.vue'
@@ -34,6 +35,45 @@ const visible = computed({
 })
 
 const workspaceId = useWorkspaceId()
+
+const nodePropertiesRef = ref<InstanceType<typeof NodeProperties> | null>(null)
+const newNoteFormRef = ref<InstanceType<typeof NewNoteForm> | null>(null)
+const skipUnsavedChangesPrompt = ref(false)
+
+const hasUnsavedChanges = computed(
+  () =>
+    !!nodePropertiesRef.value?.hasUnsavedChanges ||
+    !!newNoteFormRef.value?.hasUnsavedChanges,
+)
+
+const confirmDiscardChanges = () => {
+  if (skipUnsavedChangesPrompt.value) {
+    skipUnsavedChangesPrompt.value = false
+    return true
+  }
+
+  return (
+    !hasUnsavedChanges.value ||
+    window.confirm('You have unsaved changes. Are you sure you want to leave?')
+  )
+}
+
+onBeforeRouteLeave(confirmDiscardChanges)
+onBeforeRouteUpdate(confirmDiscardChanges)
+
+const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+  if (!hasUnsavedChanges.value) {
+    return
+  }
+
+  event.preventDefault()
+  event.returnValue = ''
+}
+
+onMounted(() => window.addEventListener('beforeunload', warnBeforeUnload))
+onBeforeUnmount(() =>
+  window.removeEventListener('beforeunload', warnBeforeUnload),
+)
 
 const nodeQuery = reactive(useNodeQuery(props.nodeId))
 const node = computed(() => nodeQuery.data)
@@ -94,6 +134,7 @@ const deleteNodeMutation = reactive(
         id,
       }),
     onSuccess: () => {
+      skipUnsavedChangesPrompt.value = !!props.onClose
       props.onClose?.()
       queryClient.invalidateQueries({ queryKey: ['w', workspaceId, 'nodes'] })
       queryClient.invalidateQueries({ queryKey: ['w', workspaceId, 'edges'] })
@@ -138,7 +179,7 @@ const deleteNode = () => {
         {{ getNodeTypeTitle(nodeTypesQuery.data.items, node.nodeTypeId) }}
       </div>
 
-      <NodeProperties :node="node" />
+      <NodeProperties ref="nodePropertiesRef" :node="node" />
 
       <section class="section">
         <div class="section-header">
@@ -213,7 +254,7 @@ const deleteNode = () => {
         </div>
 
         <div class="section">
-          <NewNoteForm :node-id="node.id" />
+          <NewNoteForm ref="newNoteFormRef" :node-id="node.id" />
         </div>
 
         <Spinner v-if="notesQuery.isPending" />

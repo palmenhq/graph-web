@@ -4,6 +4,9 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { apiClient, url } from '../api'
 import type { Node } from '../api/use-nodes-query.ts'
 import { useWorkspaceId } from '../api/use-current-workspace-query.ts'
+import copy from 'copy-to-clipboard'
+import OiPencil from '@openvue/openicons-vue/icons/OiPencil'
+import OiClone from '@openvue/openicons-vue/icons/OiClone'
 
 const props = defineProps<{
   node: Pick<Node, 'id' | 'title'>
@@ -54,6 +57,15 @@ const save = () => {
   }
   updateNodeMutation.mutate({ id: props.node.id, title: trimmed })
 }
+
+const copyLink = () => {
+  copy(
+    window.location.protocol +
+      '//' +
+      window.location.host +
+      window.location.pathname,
+  )
+}
 </script>
 
 <template>
@@ -100,7 +112,20 @@ const save = () => {
       title="Edit title"
       @click="startEditing"
     >
-      ✎
+      <OiPencil />
+    </Button>
+
+    <Button
+      type="button"
+      size="small"
+      text
+      rounded
+      severity="secondary"
+      aria-label="Copy link"
+      :title="`Copy link to ${node.title}`"
+      @click="copyLink"
+    >
+      <OiClone />
     </Button>
   </div>
 </template>
@@ -110,6 +135,7 @@ const save = () => {
 .title-display {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.5rem;
   flex: 1;
   min-width: 0;

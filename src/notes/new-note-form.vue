@@ -30,6 +30,8 @@ const canSubmit = computed(
   () => !!noteBody.value && !isEmptyNoteBody(noteBody.value),
 )
 
+defineExpose({ hasUnsavedChanges: canSubmit })
+
 const queryClient = useQueryClient()
 const createNoteMutation = reactive(
   useMutation({
