@@ -111,6 +111,23 @@ const startEditingNote = (note: Note) => {
 
 const queryClient = useQueryClient()
 
+const markNodeViewedMutation = reactive(
+  useMutation({
+    mutationKey: ['nodes', 'markViewed'],
+    mutationFn: (id: string) =>
+      apiClient.post(url`/workspaces/${workspaceId}/graph/nodes/markViewed`, {
+        id,
+      }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ['w', workspaceId, 'nodes'],
+        predicate: (query) => query.queryKey[3] !== 'byId',
+      }),
+  }),
+)
+
+onMounted(() => markNodeViewedMutation.mutate(props.nodeId))
+
 const deleteEdgeMutation = reactive(
   useMutation({
     mutationKey: ['edges', 'delete'],
