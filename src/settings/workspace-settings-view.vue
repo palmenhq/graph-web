@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useQueryClient } from '@tanstack/vue-query'
+import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import PageHeader from '../layout/page-header.vue'
 import Spinner from '../design/spinner.vue'
 import NodeTypeRow from './node-type-row.vue'
@@ -19,6 +19,7 @@ import {
   useEdgeTypesQuery,
 } from '../api/use-edge-types-query.ts'
 import { setSessionToken } from '../api/session.ts'
+import { apiClient, url } from '../api'
 
 const workspaceId = useWorkspaceId()
 const workspaceQuery = reactive(useCurrentWorkspaceQuery())
@@ -27,6 +28,62 @@ const edgeTypesQuery = reactive(useEdgeTypesQuery())
 
 const router = useRouter()
 const queryClient = useQueryClient()
+
+const workspaceName = ref('')
+
+watch(
+  () => workspaceQuery.data,
+  (workspace) => {
+    if (workspace) {
+      workspaceName.value = workspace.name
+    }
+  },
+  { immediate: true },
+)
+
+const renameWorkspaceMutation = reactive(
+  useMutation({
+    mutationKey: ['workspaces', 'rename'],
+    mutationFn: (variables: { id: string; name: string }) =>
+      apiClient.post(url`/workspaces/rename`, variables),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['workspaces'] })
+    },
+  }),
+)
+
+const deleteWorkspaceMutation = reactive(
+  useMutation({
+    mutationKey: ['workspaces', 'delete'],
+    mutationFn: (variables: { id: string }) =>
+      apiClient.post(url`/workspaces/delete`, variables),
+    onSuccess: async () => {
+      await router.replace('/w')
+      queryClient.removeQueries({ queryKey: ['workspaces', workspaceId] })
+      queryClient.removeQueries({ queryKey: ['w', workspaceId] })
+      await queryClient.invalidateQueries({ queryKey: ['workspaces'] })
+    },
+  }),
+)
+
+const renameWorkspace = () => {
+  const name = workspaceName.value.trim()
+  if (!name || name === workspaceQuery.data?.name) {
+    return
+  }
+  renameWorkspaceMutation.mutate({ id: workspaceId, name })
+}
+
+const deleteWorkspace = () => {
+  const name = workspaceQuery.data?.name
+  if (
+    !name ||
+    !window.confirm(`Delete workspace "${name}"? This cannot be undone.`)
+  ) {
+    return
+  }
+  deleteWorkspaceMutation.mutate({ id: workspaceId })
+}
 
 const logOut = async () => {
   setSessionToken(null)
@@ -51,6 +108,30 @@ const logOut = async () => {
     </PageHeader>
 
     <div class="settings-layout">
+      <Panel v-if="workspaceQuery.data" header="Workspace">
+        <form class="workspace-name-form">
+          <InputText
+            v-model="workspaceName"
+            aria-label="Workspace name"
+            :disabled="renameWorkspaceMutation.isPending"
+          />
+          <Button
+            label="Rename"
+            type="submit"
+            :disabled="
+              !workspaceName.trim() ||
+              workspaceName.trim() === workspaceQuery.data.name ||
+              renameWorkspaceMutation.isPending
+            "
+            :loading="renameWorkspaceMutation.isPending"
+            @click="renameWorkspace"
+          />
+        </form>
+        <small v-if="renameWorkspaceMutation.isError" class="error-message">
+          Could not rename workspace.
+        </small>
+      </Panel>
+
       <Panel header="Types">
         <Spinner v-if="nodeTypesQuery.isPending" />
         <div v-if="nodeTypesQuery.isError">error</div>
@@ -93,8 +174,22 @@ const logOut = async () => {
         </DataView>
       </Panel>
 
-      <Panel header="Account">
+      <Panel header="Danger zone">
         <Button severity="danger" outlined @click="logOut">Log out</Button>
+
+        <div class="workspace-delete">
+          <Button
+            label="Delete workspace"
+            severity="danger"
+            outlined
+            :loading="deleteWorkspaceMutation.isPending"
+            :disabled="deleteWorkspaceMutation.isPending"
+            @click="deleteWorkspace"
+          />
+          <small v-if="deleteWorkspaceMutation.isError" class="error-message">
+            Could not delete workspace.
+          </small>
+        </div>
       </Panel>
     </div>
   </template>
@@ -105,6 +200,21 @@ const logOut = async () => {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+.workspace-name-form,
+.workspace-delete {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.workspace-delete {
+  margin-top: 1.5rem;
+}
+
+.error-message {
+  color: var(--p-red-500);
 }
 
 @media (max-width: 640px) {
